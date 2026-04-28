@@ -1,0 +1,179 @@
+apps/server-core/src/module/company/company.repo.ts
+  12279b080896f7b9 2,21-22,37-61,112-196
+  27793d4f82e52927 4-5
+apps/server-core/src/module/company/company.util.ts
+  aff0045394f7be15 1-8
+apps/client-ui/.tanstack/tmp/5f28de15-eda03306da58739bee629d31a0222b48
+  aff0045394f7be15 1-116
+apps/server-core/src/seed.ts
+  12279b080896f7b9 5-8,32-33,39
+  27793d4f82e52927 3-4,18,30-31,34-38
+apps/server-core/src/main.ts
+  aff0045394f7be15 15-16
+  27793d4f82e52927 9-11,17-18,28-33,36-37,40-42,54
+  12279b080896f7b9 23,55
+apps/server-core/src/module/module.skill.md
+  aff0045394f7be15 28-29
+apps/server-core/src/module/company-check/company-check.workflow.ts
+  27793d4f82e52927 1-48
+apps/server-core/src/module/company-check/company-check.service.test.ts
+  12279b080896f7b9 114-120,131-133,141-143
+  27793d4f82e52927 1-113,121-130,134-140,144-159
+apps/server-core/src/platform/auth/auth.impl.ts
+  24a0398d6938676a 99-102
+apps/client-ui/src/module/company/company-detail.route.tsx
+  12279b080896f7b9 5,23,31,38
+.oxlintrc.json
+  aff0045394f7be15 22-32
+apps/server-core/src/module/company-check/company-check.table.ts
+  27793d4f82e52927 1-69
+apps/server-core/drizzle/20260428155005_serious_captain_midlands/migration.sql
+  12279b080896f7b9 1-94
+apps/server-core/src/module/company-check/company-check.util.ts
+  27793d4f82e52927 1-197
+apps/server-core/src/module/company-check/company-check.rpc.contract.ts
+  27793d4f82e52927 1-21
+apps/client-ui/src/module/company/company.atom.ts
+  12279b080896f7b9 15-16
+apps/client-ui/src/module/company-check/company-check.atom.test.ts
+  27793d4f82e52927 1-9
+apps/client-ui/src/module/company-check/company-check.atom.ts
+  27793d4f82e52927 1-11
+tools/oxlint-effect/plugin.mjs
+  aff0045394f7be15 33,37-42,67,238,295,318-364,1107
+apps/client-ui/src/module/company/ui/company-list.ui.story.tsx
+  aff0045394f7be15 72
+apps/client-ui/src/module/company/ui/company-detail.ui.story.tsx
+  12279b080896f7b9 2,5-83,87,89,92,106-110,116-172
+apps/server-core/src/module/company/company.table.ts
+  12279b080896f7b9 1,16-39
+apps/client-ui/src/module/auth/auth.route.tsx
+  24a0398d6938676a 55,61,80
+apps/server-core/src/platform/db.impl.ts
+  12279b080896f7b9 7-12,19-32
+  27793d4f82e52927 13-14
+apps/server-core/src/module/company/company.error.ts
+  27793d4f82e52927 1-6
+apps/server-core/src/platform/rpc.contract.ts
+  27793d4f82e52927 1,5,7-8,11
+apps/server-core/src/module/company-check/group/traction/traction.group.ts
+  27793d4f82e52927 1-39
+apps/server-core/src/module/company/company.service.test.ts
+  12279b080896f7b9 22-27,32-33,45-66,71-73,76-85,88-90,95-102,104-109,150-175
+  27793d4f82e52927 3-4,6-7,74-75,86-87,91-94,103
+apps/server-core/drizzle/20260428152634_thick_hydra/snapshot.json
+  aff0045394f7be15 5,624,627,637,640,649,657,665,673,681,690,699,708
+apps/client-ui/src/module/company/ui/company-detail.ui.tsx
+  12279b080896f7b9 1-7,10-21,24-32,34-35,38-40,42-49,52-107,109-114,119-142,145-149,151-209,212,214-224,244-254,257-282
+apps/client-ui/src/module/company/ui/company-list.ui.tsx
+  aff0045394f7be15 2,7,40-41,89,98,134,141,169,173,181,219,228
+AGENTS.md
+  aff0045394f7be15 38
+apps/server-core/src/module/company/company.seed.ts
+  12279b080896f7b9 7,10-21,88-209,218,220-233,235,240-290
+  27793d4f82e52927 2-3,5,214,219,234,236-237
+apps/server-core/src/module/company/company.rpc.contract.ts
+  12279b080896f7b9 21-26
+  27793d4f82e52927 3-4,27
+apps/server-core/src/module/company/company.service.ts
+  12279b080896f7b9 5-7,9-11,48-55,57-59,71-75,77-78,80-93
+  27793d4f82e52927 1-3,12,19,56,76,79
+  aff0045394f7be15 8,24
+apps/server-core/src/module/company/company.rpc.impl.ts
+  12279b080896f7b9 19-22
+apps/server-core/src/module/company-check/group/traction/traction.helpers.ts
+  27793d4f82e52927 1-19
+apps/server-core/drizzle/20260428155005_serious_captain_midlands/snapshot.json
+  12279b080896f7b9 1-1768
+apps/server-core/src/module/company-check/group/traction/growth-rate.check.ts
+  27793d4f82e52927 1-80
+apps/server-core/src/module/company-check/company-check.util.test.ts
+  27793d4f82e52927 1-142
+apps/server-core/src/module/company-check/company-check.repo.ts
+  27793d4f82e52927 1-329
+apps/server-core/src/module/company-check/company-check.service.ts
+  27793d4f82e52927 1-3,11-147,159-190
+  12279b080896f7b9 4-10,148-158,191
+apps/server-core/src/module/company-check/company-check.rpc.impl.ts
+  27793d4f82e52927 1-20
+apps/server-core/src/module/company/company.util.test.ts
+  aff0045394f7be15 1,3,7-8,11-12
+  27793d4f82e52927 4,6,9-10
+  12279b080896f7b9 2,5
+apps/client-ui/src/module/company/company.atom.test.ts
+  27793d4f82e52927 1-11
+apps/server-core/src/module/module.util.skill.md
+  aff0045394f7be15 1-43
+apps/server-core/src/module/company/company.schema.ts
+  27793d4f82e52927 2
+  12279b080896f7b9 40-90
+apps/server-core/src/module/company-check/company-check.schema.ts
+  27793d4f82e52927 1-146
+apps/server-core/src/module/company-check/group/traction/arr.check.ts
+  27793d4f82e52927 1-72
+apps/server-core/src/module/company-check/company-check.queue.ts
+  27793d4f82e52927 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "1a53044730108163f48fef9702c8dce0406a70c9",
+  "prompts": {
+    "12279b080896f7b9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b54111dffe6Br4C3p65GF1p8",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 4603,
+      "total_deletions": 1242,
+      "accepted_lines": 2855,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/7465660e60ed0c58e74f074c8582968cef41a4bd2afdf6983eb1372e95be7d61"
+    },
+    "24a0398d6938676a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b3aa7b7ffekTH7rpe6C2dlWI",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 41,
+      "accepted_lines": 7,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/2a23fa9aba6f7f1ebccd4ae91566821858dde76e5f8508ec53d318e413817f9c"
+    },
+    "27793d4f82e52927": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b0f7559ffe7DjJIpq87kn6mJ",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 2063,
+      "total_deletions": 1291,
+      "accepted_lines": 1643,
+      "overriden_lines": 67,
+      "messages_url": "https://usegitai.com/cas/4326a7a069cbe2d621e9d197a05cc9de090a41ef99d2c388a3e5e18543044ec4"
+    },
+    "aff0045394f7be15": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b35115effeKlUDtSsh2rkqXw",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 1075,
+      "total_deletions": 454,
+      "accepted_lines": 317,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/f3b7cb26ccf0d5ac2a2a58dc276e4a56a07d9823cbbaa6d29f3515e82be4e48c"
+    }
+  }
+}
