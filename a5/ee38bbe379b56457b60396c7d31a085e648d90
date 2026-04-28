@@ -1,0 +1,103 @@
+apps/server-core/src/module/company/company.schema.ts
+  896923234799b499 34-38
+apps/client-ui/src/module/company/ui/company-list.ui.story.tsx
+  0c471a4bf72ef69f 25
+  896923234799b499 58-99
+apps/client-ui/src/module/company/company.route.tsx
+  896923234799b499 2-4,6-7,16,28-40,42-50,56-69
+apps/server-core/src/module/company/company.service.test.ts
+  896923234799b499 42-53
+apps/client-ui/src/module/company/ui/company-create-dialog.ui.story.tsx
+  896923234799b499 1-4,6-35
+  0c471a4bf72ef69f 5
+apps/client-ui/src/shared/ui/breadcrumb.ui.tsx
+  896923234799b499 1-103
+apps/server-core/src/module/company/company.rpc.contract.ts
+  896923234799b499 3,6-10,21
+apps/server-core/src/module/company/company.service.ts
+  896923234799b499 1,3,16-35,54,59-67
+apps/server-core/src/module/company/company.rpc.impl.ts
+  896923234799b499 9-11
+apps/client-ui/src/module/company/company-detail.route.tsx
+  896923234799b499 1,4,8-15,28-32,44-57
+apps/client-ui/src/shared/ui/chart.ui.story.tsx
+  0c471a4bf72ef69f 18
+apps/client-ui/src/module/company/ui/company-create-dialog.ui.tsx
+  896923234799b499 1-90
+apps/client-ui/src/module/company/company.atom.ts
+  896923234799b499 9-11,14-15
+apps/client-ui/src/index.css
+  6fea78c96c394bd7 54-112,114-121,125-176
+apps/client-ui/src/module/company/ui/company-detail.ui.story.tsx
+  0c471a4bf72ef69f 20
+apps/client-ui/src/shared/ui/breadcrumb.ui.story.tsx
+  0c471a4bf72ef69f 12
+  896923234799b499 1-11,13-34
+apps/server-core/Dockerfile
+  e7e3fd0a4cd67bf7 39
+apps/client-ui/src/module/company/ui/company-list.ui.tsx
+  896923234799b499 10-11,13-17,19-36,39,41-50,52,56-63,65-67,74-101,103-104,106-191,193-198,200-205,208-216,218-235
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "a5ee38bbe379b56457b60396c7d31a085e648d90",
+  "prompts": {
+    "0c471a4bf72ef69f": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b5228c4ffeGa8wCT5d5Ret4B",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 5,
+      "accepted_lines": 5,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/69f5e464acbcfdd3d2a17e4957c84166b5ce178859eafddba794e3fac15631bd"
+    },
+    "6fea78c96c394bd7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b5cf6f3ffeWseMzXION4bAIn",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 119,
+      "total_deletions": 62,
+      "accepted_lines": 119,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/7f0e05414ef613a9c40782a0d26515b219e6aa2acb6c5ad7f2c9744350fdf1cb"
+    },
+    "896923234799b499": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b6bca91ffeMEC3HFqUkBSKAu",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 610,
+      "total_deletions": 59,
+      "accepted_lines": 632,
+      "overriden_lines": 6,
+      "messages_url": "https://usegitai.com/cas/e95f0f2109bdf80a9724f5c56d0ff854f73bafec104c0964996f0dc97c0e8c29"
+    },
+    "e7e3fd0a4cd67bf7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22bc2eeb9ffeg7xX1X0S0Fm1xw",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/8f3b8290a33fe99e049dd1aa4fa0c78ca023bbb9429906d8cae66614e61085ea"
+    }
+  }
+}
