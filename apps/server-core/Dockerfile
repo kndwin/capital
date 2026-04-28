@@ -36,7 +36,8 @@ RUN pnpm --filter @capital/client-ui build
 FROM build-client AS deploy
 RUN pnpm --filter @capital/server-core deploy --legacy --prod /deploy
 RUN mkdir -p /deploy/src/client && cp -R apps/client-ui/dist/. /deploy/src/client/
-RUN mkdir -p /deploy/drizzle && cp -R apps/server-core/drizzle/. /deploy/drizzle/
+RUN mkdir -p /deploy/drizzle && \
+    if [ -d apps/server-core/drizzle ]; then cp -R apps/server-core/drizzle/. /deploy/drizzle/; fi
 
 # ─── runtime: Bun-only, copies only the deployed bundle ──────────────────────
 FROM oven/bun:1.2-slim AS runtime
