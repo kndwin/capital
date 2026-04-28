@@ -58,7 +58,7 @@ export function CompanyDetail({ detail }: { readonly detail: CompanyDetailData }
             {checkGroups.length === 0 ? (
               <EmptyPanel
                 title="No checks yet"
-                description="Seed checks to populate the diligence view."
+                description="Checks will resolve as sources are processed."
               />
             ) : (
               checkGroups.map((group) => <CheckGroupView key={group.id} group={group} />)
@@ -269,6 +269,8 @@ function verdictClassName(verdict: CompanyCheckGroup["verdict"]) {
 
 function sourceClassName(source: CompanyCheck["source"]) {
   switch (source) {
+    case "definition":
+      return "border-border bg-muted text-muted-foreground";
     case "engine":
       return "border-primary/20 bg-primary/10 text-primary";
     case "override":

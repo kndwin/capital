@@ -13,10 +13,12 @@ import { CompanyCheckRepo } from "./company-check.repo";
 import {
   applyOverrides,
   calculateWeightedScore,
+  getDefinitionChecks,
   evaluateCheck,
   getCheckDefinitions,
   groupChecks,
   hashCheckEngineInput,
+  mergeDefinitionChecks,
   toEngineCheck,
 } from "./company-check.util";
 
@@ -75,10 +77,17 @@ export class CompanyCheckService extends Context.Service<CompanyCheckService>()(
         const engineChecks = yield* checkRepo.listEngineChecks(companyId);
         const overrides = yield* checkRepo.listCheckOverrides(companyId);
         const checkInsights = yield* checkRepo.listCheckInsights(companyId);
+        const now = yield* Clock.currentTimeMillis;
+        const definitionChecks = getDefinitionChecks({ companyId, updatedAt: now });
         const effectiveChecks =
           engineChecks.length > 0
-            ? applyOverrides({ engineChecks, overrides, links: checkInsights })
-            : seedChecks;
+            ? mergeDefinitionChecks({
+                definitions: definitionChecks,
+                checks: applyOverrides({ engineChecks, overrides, links: checkInsights }),
+              })
+            : seedChecks.length > 0
+              ? mergeDefinitionChecks({ definitions: definitionChecks, checks: seedChecks })
+              : definitionChecks;
         return groupChecks({ checks: effectiveChecks });
       }, withModuleLogs);
 

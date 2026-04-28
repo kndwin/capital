@@ -20,6 +20,7 @@ export const CompanyCheck = Schema.Struct({
   detail: Schema.NullOr(Schema.String),
   rationale: Schema.String,
   source: Schema.Union([
+    Schema.Literal("definition"),
     Schema.Literal("engine"),
     Schema.Literal("override"),
     Schema.Literal("seed"),

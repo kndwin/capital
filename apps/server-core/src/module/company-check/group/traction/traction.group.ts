@@ -11,8 +11,43 @@ export type CompanyCheckGroupDefinition = {
 
 export const tractionGroup = {
   id: "traction",
-  label: "Traction",
-  checks: [arrCheck, growthRateCheck],
+  label: "Traction & Financials",
+  checks: [
+    { ...arrCheck, groupLabel: "Traction & Financials", label: "Revenue scale", order: 310 },
+    { ...growthRateCheck, groupLabel: "Traction & Financials", order: 320 },
+    {
+      id: "traction.gross_margin",
+      groupId: "traction",
+      groupLabel: "Traction & Financials",
+      label: "Gross margin",
+      weight: 1,
+      order: 330,
+    },
+    {
+      id: "traction.burn_runway",
+      groupId: "traction",
+      groupLabel: "Traction & Financials",
+      label: "Burn rate & runway",
+      weight: 1,
+      order: 340,
+    },
+    {
+      id: "traction.customer_concentration",
+      groupId: "traction",
+      groupLabel: "Traction & Financials",
+      label: "Customer concentration",
+      weight: 1,
+      order: 350,
+    },
+    {
+      id: "traction.net_retention",
+      groupId: "traction",
+      groupLabel: "Traction & Financials",
+      label: "Net retention",
+      weight: 1,
+      order: 360,
+    },
+  ],
 } satisfies CompanyCheckGroupDefinition;
 
 export function evaluateTractionCheck({

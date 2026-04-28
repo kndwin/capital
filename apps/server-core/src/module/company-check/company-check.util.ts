@@ -9,6 +9,10 @@ import type {
   CompanyCheckOverride,
   CompanyEngineCheck,
 } from "./company-check.schema";
+import { dealRiskGroup } from "./group/deal-risk/deal-risk.group";
+import { marketGroup } from "./group/market/market.group";
+import { productGroup } from "./group/product/product.group";
+import { teamGroup } from "./group/team/team.group";
 import { evaluateTractionCheck, tractionGroup } from "./group/traction/traction.group";
 
 export function getCheckDefinitions({
@@ -16,7 +20,50 @@ export function getCheckDefinitions({
 }: {
   readonly _: undefined;
 }): ReadonlyArray<CompanyCheckDefinition> {
-  return _ === undefined ? tractionGroup.checks : tractionGroup.checks;
+  return _ === undefined
+    ? [teamGroup, marketGroup, productGroup, tractionGroup, dealRiskGroup].flatMap(
+        (group) => group.checks,
+      )
+    : [];
+}
+
+export function getDefinitionChecks({
+  companyId,
+  updatedAt,
+}: {
+  readonly companyId: string;
+  readonly updatedAt: number;
+}): ReadonlyArray<CompanyCheck> {
+  return getCheckDefinitions({ _: undefined }).map((definition) => ({
+    id: `${companyId}:${definition.id}:definition`,
+    companyId,
+    checkDefinitionId: definition.id,
+    groupId: definition.groupId,
+    groupLabel: definition.groupLabel,
+    label: definition.label,
+    status: "unknown",
+    score: 0,
+    detail: null,
+    rationale: "Not evaluated yet.",
+    source: "definition",
+    overrideId: null,
+    supportingInsightIds: [],
+    order: definition.order,
+    updatedAt,
+  }));
+}
+
+export function mergeDefinitionChecks({
+  definitions,
+  checks,
+}: {
+  readonly definitions: ReadonlyArray<CompanyCheck>;
+  readonly checks: ReadonlyArray<CompanyCheck>;
+}): ReadonlyArray<CompanyCheck> {
+  const checksByDefinitionId = new Map(checks.map((check) => [check.checkDefinitionId, check]));
+  return definitions.map(
+    (definition) => checksByDefinitionId.get(definition.checkDefinitionId) ?? definition,
+  );
 }
 
 export function groupChecks({
@@ -40,7 +87,7 @@ export function groupChecks({
       label: group.label,
       verdict: scoreToVerdict({ score }),
       score,
-      checks: group.checks,
+      checks: group.checks.toSorted((left, right) => left.order - right.order),
     };
   });
 }

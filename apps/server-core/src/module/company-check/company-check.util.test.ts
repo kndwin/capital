@@ -5,9 +5,11 @@ import {
   applyOverrides,
   calculateWeightedScore,
   evaluateCheck,
+  getDefinitionChecks,
   getCheckDefinitions,
   groupChecks,
   hashCheckEngineInput,
+  mergeDefinitionChecks,
   scoreChecks,
   scoreToVerdict,
   stableHash,
@@ -46,11 +48,35 @@ const insight: CompanySourceInsight = {
 };
 
 describe("getCheckDefinitions", () => {
-  it("returns traction checks", () => {
-    expect(getCheckDefinitions({ _: undefined }).map((check) => check.id)).toEqual([
-      "traction.arr",
-      "traction.growth_rate",
-    ]);
+  it("returns the full diligence check list", () => {
+    const definitions = getCheckDefinitions({ _: undefined });
+
+    expect(definitions).toHaveLength(23);
+    expect(definitions.map((check) => check.id)).toContain("traction.arr");
+    expect(definitions.map((check) => check.id)).toContain("deal_risk.source_consistency");
+  });
+});
+
+describe("getDefinitionChecks", () => {
+  it("returns unknown checks for every definition", () => {
+    const checks = getDefinitionChecks({ companyId: "company", updatedAt: 1 });
+
+    expect(checks).toHaveLength(23);
+    expect(checks.every((check) => check.status === "unknown")).toBe(true);
+    expect(checks.every((check) => check.source === "definition")).toBe(true);
+  });
+});
+
+describe("mergeDefinitionChecks", () => {
+  it("overlays evaluated checks onto the full definition list", () => {
+    const definitions = getDefinitionChecks({ companyId: "company", updatedAt: 1 });
+    const checks = mergeDefinitionChecks({ definitions, checks: [baseCheck] });
+
+    expect(checks).toHaveLength(23);
+    expect(checks.find((check) => check.checkDefinitionId === "traction.arr")?.status).toBe("pass");
+    expect(
+      checks.find((check) => check.checkDefinitionId === "team.founder_prestige")?.status,
+    ).toBe("unknown");
   });
 });
 
@@ -95,7 +121,9 @@ describe("stableHash", () => {
 
 describe("evaluateCheck", () => {
   it("evaluates registered traction checks", () => {
-    const definition = getCheckDefinitions({ _: undefined })[0];
+    const definition = getCheckDefinitions({ _: undefined }).find(
+      (check) => check.id === "traction.arr",
+    );
     expect(definition).toBeDefined();
     expect(evaluateCheck({ definition: definition!, insights: [insight] }).status).toBe("pass");
   });
@@ -103,7 +131,9 @@ describe("evaluateCheck", () => {
 
 describe("toEngineCheck", () => {
   it("converts a judgement to an engine check", () => {
-    const definition = getCheckDefinitions({ _: undefined })[0]!;
+    const definition = getCheckDefinitions({ _: undefined }).find(
+      (check) => check.id === "traction.arr",
+    )!;
     const check = toEngineCheck({
       companyId: "company",
       definition,

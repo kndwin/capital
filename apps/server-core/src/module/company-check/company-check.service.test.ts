@@ -144,6 +144,22 @@ const TestLive = CompanyCheckServiceLive.pipe(
 );
 
 describe("CompanyCheckService", () => {
+  it.effect("returns definition groups before the engine runs", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyCheckService;
+
+      const groups = yield* service.getGroups(sample.id);
+
+      assert.strictEqual(groups.length, 5);
+      assert.strictEqual(
+        groups.reduce((count, group) => count + group.checks.length, 0),
+        23,
+      );
+      assert.strictEqual(groups[0]?.score, null);
+      assert.strictEqual(groups[0]?.checks[0]?.source, "definition");
+    }).pipe(Effect.provide(TestLive)),
+  );
+
   it.effect("runs traction check engine and groups checks", () =>
     Effect.gen(function* () {
       const service = yield* CompanyCheckService;
@@ -151,9 +167,9 @@ describe("CompanyCheckService", () => {
       yield* service.runCheckEngine(sample.id, "test");
       const groups = yield* service.getGroups(sample.id);
 
-      assert.strictEqual(groups.length, 1);
-      assert.strictEqual(groups[0]?.label, "Traction");
-      assert.strictEqual(groups[0]?.checks.length, 2);
+      assert.strictEqual(groups.length, 5);
+      assert.strictEqual(groups[3]?.label, "Traction & Financials");
+      assert.strictEqual(groups[3]?.checks.length, 6);
     }).pipe(Effect.provide(TestLive)),
   );
 });

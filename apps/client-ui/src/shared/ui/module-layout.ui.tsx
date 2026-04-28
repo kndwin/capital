@@ -38,8 +38,15 @@ export function ModuleLayoutSidebar({
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1.5 py-1">
-          <Logo />
-          <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Capital</span>
+          <Link
+            to="/"
+            className="flex items-center gap-2 rounded-md hover:text-sidebar-accent-foreground"
+          >
+            <Logo />
+            <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">
+              Capital
+            </span>
+          </Link>
           {headerExtra ? (
             <span className="flex items-center group-data-[collapsible=icon]:hidden">
               {headerExtra}

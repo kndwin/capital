@@ -34,6 +34,7 @@ export type ParticleFieldProps = {
   damping?: number;
   className?: string;
   align?: "center" | "bottom";
+  fit?: "cover" | "contain";
   color?: string;
   invert?: boolean;
   adaptToTheme?: boolean;
@@ -112,6 +113,7 @@ export function ParticleField({
   damping = 0.86,
   className,
   align = "center",
+  fit = "cover",
   color = "rgba(255, 255, 255, 0.92)",
   invert = false,
   adaptToTheme = true,
@@ -151,6 +153,8 @@ export function ParticleField({
   dampingRef.current = damping;
   const alignRef = useRef(align);
   alignRef.current = align;
+  const fitRef = useRef(fit);
+  fitRef.current = fit;
   const invertRef = useRef(invert);
   invertRef.current = invert;
   const denseParticlesRef = useRef(denseParticles);
@@ -200,7 +204,8 @@ export function ParticleField({
 
       let drawW = width;
       let drawH = height;
-      if (srcRatio > dstRatio) {
+      const shouldCover = fitRef.current === "cover";
+      if (srcRatio > dstRatio === shouldCover) {
         drawH = height;
         drawW = height * srcRatio;
       } else {
