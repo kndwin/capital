@@ -24,17 +24,15 @@ function LoginPage() {
   const particleImpulseRef = useRef(0);
 
   return (
-    <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-background p-6">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,hsl(var(--foreground)/.1),transparent_32%),radial-gradient(circle_at_78%_72%,hsl(var(--foreground)/.07),transparent_30%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,hsl(var(--background)/.28)_62%,hsl(var(--background))_100%)]" />
-      <div className="relative z-10 flex w-full max-w-5xl flex-col items-center justify-center gap-8 md:flex-row md:gap-14">
+    <div className="flex min-h-svh w-full items-center justify-center overflow-hidden bg-background p-6">
+      <div className="flex w-full max-w-4xl flex-col items-center justify-center gap-6 md:flex-row md:gap-10">
         <ParticleField
           src={capitalParticleLogoSrc}
-          className="size-[min(78vw,20rem)] shrink-0 opacity-40 md:size-[28rem]"
+          className="size-48 shrink-0 opacity-40 sm:size-56 md:size-80"
           threshold={54}
           sampleStep={2.15}
           dotSize={0.62}
-          renderScale={0.86}
+          renderScale={0.82}
           mouseForce={54}
           mouseRadius={150}
           denseParticles

@@ -12,9 +12,7 @@ WORKDIR /app
 FROM base AS fetch
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY patches ./patches
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm config set store-dir /pnpm/store && \
-    pnpm fetch
+RUN pnpm config set store-dir /pnpm/store && pnpm fetch
 
 # ─── deps: offline install for the deployed app graph ────────────────────────
 FROM fetch AS deps
@@ -22,10 +20,9 @@ COPY package.json ./
 COPY apps/client-ui/package.json ./apps/client-ui/
 COPY apps/server-core/package.json ./apps/server-core/
 COPY packages/client-api/package.json ./packages/client-api/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --offline --frozen-lockfile \
-      --filter @capital/client-ui... \
-      --filter @capital/server-core...
+RUN pnpm install --offline --frozen-lockfile \
+    --filter @capital/client-ui... \
+    --filter @capital/server-core...
 
 # ─── build-client: produce static Vite assets ────────────────────────────────
 FROM deps AS build-client
@@ -37,8 +34,7 @@ RUN pnpm --filter @capital/client-ui build
 
 # ─── deploy: produce a lean prod-only bundle for server-core ─────────────────
 FROM build-client AS deploy
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm --filter @capital/server-core deploy --legacy --prod /deploy
+RUN pnpm --filter @capital/server-core deploy --legacy --prod /deploy
 RUN mkdir -p /deploy/src/client && cp -R apps/client-ui/dist/. /deploy/src/client/
 
 # ─── runtime: Bun-only, copies only the deployed bundle ──────────────────────
