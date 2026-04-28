@@ -1,0 +1,11 @@
+import { AtomRpc } from "effect/unstable/reactivity";
+import { ApiGroup, rpcProtocolLayer } from "@capital/client-api/rpc";
+
+export class CompanyClient extends AtomRpc.Service<CompanyClient>()(
+  "client-ui/company/CompanyClient",
+  { group: ApiGroup, protocol: rpcProtocolLayer("/api/rpc") },
+) {}
+
+export const companiesAtom = CompanyClient.query("CompanyList", undefined);
+
+export const companyAtom = (id: string) => CompanyClient.query("CompanyGet", { id });

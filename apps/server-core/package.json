@@ -1,0 +1,37 @@
+{
+  "name": "@capital/server-core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./rpc": "./src/platform/rpc.contract.ts",
+    "./http": "./src/platform/http.contract.ts"
+  },
+  "scripts": {
+    "dev": "bun --watch src/main.ts",
+    "test": "bun --bun x vitest run",
+    "test:watch": "bun --bun x vitest",
+    "typecheck": "tsgo --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "bun src/seed.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.0.0-beta.50",
+    "@effect/sql-pg": "4.0.0-beta.50",
+    "better-auth": "^1.2.7",
+    "drizzle-orm": "1.0.0-beta.22",
+    "effect": "beta",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.0.0-beta.50",
+    "@electric-sql/pglite": "^0.4.4",
+    "@types/bun": "^1.2.0",
+    "@types/node": "^25.6.0",
+    "drizzle-kit": "1.0.0-beta.23",
+    "vitest": "^4.1.4"
+  }
+}
