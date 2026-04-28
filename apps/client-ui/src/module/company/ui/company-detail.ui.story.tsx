@@ -17,7 +17,7 @@ const company: Company = {
 };
 
 const meta: Meta<typeof CompanyDetail> = {
-  title: "Company/CompanyDetail",
+  title: "Module/Company/CompanyDetail",
   component: CompanyDetail,
   args: { company },
   decorators: [

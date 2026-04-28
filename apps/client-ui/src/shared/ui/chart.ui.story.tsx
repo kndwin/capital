@@ -15,7 +15,7 @@ const config = {
 } satisfies ChartConfig;
 
 const meta: Meta<typeof ChartContainer> = {
-  title: "Shared/Chart",
+  title: "Shared/UI/Chart",
   component: ChartContainer,
   decorators: [
     (Story) => (

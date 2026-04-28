@@ -31,3 +31,8 @@ export const Company = Schema.Struct({
   updatedAt: Schema.Number,
 });
 export type Company = typeof Company.Type;
+
+export const CompanyCreateInput = Schema.Struct({
+  name: Schema.String,
+});
+export type CompanyCreateInput = typeof CompanyCreateInput.Type;

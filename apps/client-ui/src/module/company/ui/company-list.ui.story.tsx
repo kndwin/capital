@@ -22,9 +22,9 @@ const base: Company = {
 };
 
 const meta: Meta<typeof CompanyList> = {
-  title: "Company/CompanyList",
+  title: "Module/Company/CompanyList",
   component: CompanyList,
-  args: { companies: [{ company: base, detailHref: "/company/northstar-ai" }] },
+  args: { companies: [base] },
   decorators: [
     (Story) => (
       <div className="max-w-5xl p-4">
@@ -43,30 +43,60 @@ export const Single: Story = {};
 export const Many: Story = {
   args: {
     companies: [
-      { company: base, detailHref: "/company/northstar-ai" },
+      base,
       {
-        company: {
-          ...base,
-          id: "voltframe",
-          name: "Voltframe",
-          sector: "Climate Infrastructure",
-          stage: "series_b",
-          score: 88,
-          riskLevel: "low",
-        },
-        detailHref: "/company/voltframe",
+        ...base,
+        id: "voltframe",
+        name: "Voltframe",
+        sector: "Climate Infrastructure",
+        stage: "series_b",
+        score: 88,
+        riskLevel: "low",
       },
       {
-        company: {
-          ...base,
-          id: "clearbrief",
-          name: "ClearBrief",
-          sector: "Legaltech",
-          stage: "pre_seed",
-          score: 64,
-          riskLevel: "high",
-        },
-        detailHref: "/company/clearbrief",
+        ...base,
+        id: "ledgergrid",
+        name: "LedgerGrid",
+        description:
+          "Programmable treasury controls for multi-entity finance teams with automated approvals.",
+        sector: "Fintech",
+        stage: "series_a",
+        score: 71,
+        riskLevel: "medium",
+        updatedAt: 1_777_420_800_000,
+      },
+      {
+        ...base,
+        id: "cordage",
+        name: "Cordage",
+        description:
+          "Developer tooling for contract test generation across API-first teams.",
+        sector: "Devtools",
+        stage: "pre_seed",
+        score: 54,
+        riskLevel: "medium",
+        updatedAt: 1_777_593_600_000,
+      },
+      {
+        ...base,
+        id: "clearbrief",
+        name: "ClearBrief",
+        sector: "Legaltech",
+        stage: "pre_seed",
+        score: 64,
+        riskLevel: "high",
+      },
+      {
+        ...base,
+        id: "unscored-labs",
+        name: "Unscored Labs",
+        description: null,
+        website: null,
+        sector: null,
+        stage: "unknown",
+        score: null,
+        riskLevel: "unknown",
+        updatedAt: 1_777_680_000_000,
       },
     ],
   },

@@ -39,6 +39,18 @@ const TestRepoLive = Layer.effect(
 const TestLive = CompanyServiceLive.pipe(Layer.provide(TestRepoLive));
 
 describe("CompanyService", () => {
+  it.effect("creates sparse companies from a name", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+
+      const company = yield* service.create({ name: "Bevel" });
+
+      assert.strictEqual(company.name, "Bevel");
+      assert.strictEqual(company.stage, "unknown");
+      assert.strictEqual(company.score, null);
+    }).pipe(Effect.provide(TestLive)),
+  );
+
   it.effect("upserts, lists, and gets companies", () =>
     Effect.gen(function* () {
       const service = yield* CompanyService;
