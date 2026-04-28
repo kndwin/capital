@@ -1,0 +1,82 @@
+apps/client-ui/src/shared/ui/theme-toggle.ui.story.tsx
+  d194997c3524269e 1-39
+apps/server-core/src/platform/db.config.ts
+  e7e3fd0a4cd67bf7 3-5
+apps/client-ui/src/shared/provider/theme.provider.tsx
+  d194997c3524269e 16,92,109,205,208
+apps/client-ui/src/shared/ui/module-layout.ui.tsx
+  d194997c3524269e 2,66,69
+  48a635a9b5fd88b7 23,28,44,48-50
+apps/client-ui/src/app.route.tsx
+  48a635a9b5fd88b7 90
+  d194997c3524269e 9,12,67,81-84
+apps/client-ui/src/index.css
+  d194997c3524269e 10-12,54-85,89-119,127-129,133-144
+apps/client-ui/src/shared/ui/theme-toggle.ui.tsx
+  d194997c3524269e 1-26
+apps/client-ui/src/shared/ui/module-layout.ui.story.tsx
+  d194997c3524269e 36-45,47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "b12a4f61a89257f6db8f9eaa7f498b69b821aa1b",
+  "prompts": {
+    "48a635a9b5fd88b7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22bce6a9cffe12yRl5POhN1G8k",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 7,
+      "accepted_lines": 10,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/98c2175b024152a6965d9492732ba2876d7f3eb42417d5b7957b234c41859f41"
+    },
+    "896923234799b499": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b6bca91ffeMEC3HFqUkBSKAu",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 172,
+      "total_deletions": 32,
+      "accepted_lines": 172,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/abd8a0906079e5a2616f70fc7537d3bdfef2f3cec1e7907ac086965a9e3b19bd"
+    },
+    "d194997c3524269e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22b7d2195ffe0YQ8BFnm6jGDgh",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 194,
+      "total_deletions": 89,
+      "accepted_lines": 172,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/93821893aa9ab445c9d404350be4d52728dbd72cfda681ad4d544b00a8d96386"
+    },
+    "e7e3fd0a4cd67bf7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22bc2eeb9ffeg7xX1X0S0Fm1xw",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/aa98f5c709ba4d34b1013dc038ce5f23a9695ad29d8161eba826158a2e847fe0"
+    }
+  }
+}
