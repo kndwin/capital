@@ -19,6 +19,17 @@
     "effect-local/atom-export-suffix": "error",
     "effect-local/require-table-timestamp-defaults": "error"
   },
+  "overrides": [
+    {
+      "files": ["apps/server-core/src/module/**/*.util.ts"],
+      "rules": {
+        "effect-local/util-exports-only-functions": "error",
+        "effect-local/util-test-covers-all-exports": "error",
+        "effect-local/util-export-object-params": "error",
+        "effect-local/require-companion-test": "error"
+      }
+    }
+  ],
   "ignorePatterns": [
     "**/node_modules/**",
     "**/dist/**",

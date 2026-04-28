@@ -25,6 +25,8 @@ src/module/<feature>/
   <feature>.repo.ts               ← Context.Service + Live layer for persistence
   <feature>.schema.ts             ← Schema.Struct — domain types
   <feature>.table.ts              ← Drizzle pgTable
+  <feature>.util.ts               ← pure deterministic business helpers, if any
+  <feature>.util.test.ts          ← tests for every exported util function, if any
   <feature>.service.test.ts       ← @effect/vitest service tests
 ```
 

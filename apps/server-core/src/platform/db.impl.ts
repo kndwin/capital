@@ -4,12 +4,32 @@ import { fileURLToPath } from "node:url";
 import postgres from "postgres";
 import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
 import { migrate as migratePg } from "drizzle-orm/postgres-js/migrator";
-import { company } from "../module/company/company.table";
+import {
+  companyCheck,
+  companyCheckInsight,
+  companyCheckOverride,
+  companyCheckRun,
+  companyEngineCheck,
+} from "../module/company-check/company-check.table";
+import { company, companySource, companySourceInsight } from "../module/company/company.table";
 import { account, session, user, verification } from "./auth/auth.table";
 import { Db, ErrorDb, type DbService } from "./db.contract";
 import { DbSsl, DbUrlOptional } from "./db.config";
 
-const schema = { company, user, session, account, verification };
+const schema = {
+  company,
+  companyCheck,
+  companySource,
+  companySourceInsight,
+  companyCheckRun,
+  companyEngineCheck,
+  companyCheckOverride,
+  companyCheckInsight,
+  user,
+  session,
+  account,
+  verification,
+};
 
 const migrationsFolder = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

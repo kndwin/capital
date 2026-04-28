@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import { Rpc, RpcGroup } from "effect/unstable/rpc";
-import { Company, CompanyCreateInput } from "./company.schema";
-import { ErrorCompanyNotFound } from "./company.service";
+import { ErrorCompanyNotFound } from "./company.error";
+import { Company, CompanyCreateInput, CompanyDetail } from "./company.schema";
 
 export class CompanyCreate extends Rpc.make("CompanyCreate", {
   payload: CompanyCreateInput,
@@ -18,4 +18,10 @@ export class CompanyGet extends Rpc.make("CompanyGet", {
   error: ErrorCompanyNotFound,
 }) {}
 
-export const CompanyRpcs = RpcGroup.make(CompanyCreate, CompanyList, CompanyGet);
+export class CompanyDetailGet extends Rpc.make("CompanyDetailGet", {
+  payload: Schema.Struct({ id: Schema.String }),
+  success: CompanyDetail,
+  error: ErrorCompanyNotFound,
+}) {}
+
+export const CompanyRpcs = RpcGroup.make(CompanyCreate, CompanyList, CompanyGet, CompanyDetailGet);

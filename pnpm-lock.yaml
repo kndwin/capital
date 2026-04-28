@@ -19,9 +19,12 @@ importers:
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260423.1
         version: 7.0.0-dev.20260423.1
+      effect:
+        specifier: beta
+        version: 4.0.0-beta.59
       effect-oxlint:
         specifier: ^0.1.1
-        version: 0.1.1(effect@4.0.0-beta.56)
+        version: 0.1.1(effect@4.0.0-beta.59)
       lefthook:
         specifier: ^2.1.6
         version: 2.1.6
@@ -2450,8 +2453,8 @@ packages:
   effect@4.0.0-beta.50:
     resolution: {integrity: sha512-UsENighZms6LWDSnF/05F9JinDAewV3sGXHAt9M7+dL3VnoFZIwduFxXvmFc7QJm7iV1s7rB98hv1SD3ALA9qg==}
 
-  effect@4.0.0-beta.56:
-    resolution: {integrity: sha512-VToZmpoEkH4hHFHeHDMPRwsPQY7BOCEY7uy8yI1LaFEtjZ5w3T3S4yDbKFA7L63OhPo+kZdSvL3tBLOLLcmrQA==}
+  effect@4.0.0-beta.59:
+    resolution: {integrity: sha512-xyUDLeHSe8d6lWGOvR6Fgn2HL6gYeTZ/S4Jzk9uc4ZUxMPPsNZlNXrvk0C7/utQFzeX7uAWcVnG2BjbA0SRoAA==}
 
   electron-to-chromium@1.5.338:
     resolution: {integrity: sha512-KVQQ3xko9/coDX3qXLUEEbqkKT8L+1DyAovrtu0Khtrt9wjSZ+7CZV4GVzxFy9Oe1NbrIU1oVXCwHJruIA1PNg==}
@@ -5865,10 +5868,10 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect-oxlint@0.1.1(effect@4.0.0-beta.56):
+  effect-oxlint@0.1.1(effect@4.0.0-beta.59):
     dependencies:
       '@oxlint/plugins': 1.60.0
-      effect: 4.0.0-beta.56
+      effect: 4.0.0-beta.59
 
   effect@4.0.0-beta.50:
     dependencies:
@@ -5883,7 +5886,7 @@ snapshots:
       uuid: 13.0.0
       yaml: 2.8.3
 
-  effect@4.0.0-beta.56:
+  effect@4.0.0-beta.59:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 4.6.0

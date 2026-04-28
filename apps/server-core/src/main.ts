@@ -6,23 +6,40 @@ import { DbLive } from "./platform/db.impl";
 import { AuthLive } from "./platform/auth/auth.impl";
 import { AuthCatchallLive } from "./platform/auth/auth.catchall";
 import { AuthMiddleware } from "./platform/auth/auth.middleware";
+import { CompanyCheckLive } from "./module/company-check/company-check.rpc.impl";
+import { CompanyCheckRepoLive } from "./module/company-check/company-check.repo";
+import { CompanyCheckServiceLive } from "./module/company-check/company-check.service";
 import { CompanyLive } from "./module/company/company.rpc.impl";
 import { CompanyRepoLive } from "./module/company/company.repo";
 import { CompanyServiceLive } from "./module/company/company.service";
+import {
+  CompanyCheckEngineQueueLive,
+  CompanyCheckWorkflowLive,
+} from "./module/company-check/company-check.workflow";
 import { HealthLive } from "./module/health/health.rpc.impl";
 import { HttpApiLive } from "./platform/http.impl";
 import { RpcLive } from "./platform/rpc.impl";
 import { StaticLive } from "./platform/static.impl";
+import { WorkflowEngineLive } from "./platform/workflow.impl";
 import { UsersRepoLive } from "./module/users/users.repo.impl";
 
 const Infra = DbLive;
 
-const Domain = Layer.mergeAll(
-  UsersRepoLive,
-  CompanyServiceLive.pipe(Layer.provide(CompanyRepoLive)),
+const CompanyCheckDomain = CompanyCheckServiceLive.pipe(
+  Layer.provide(CompanyCheckRepoLive),
+  Layer.provide(CompanyRepoLive),
+  Layer.provide(CompanyCheckEngineQueueLive),
 );
 
-const Handlers = Layer.mergeAll(HealthLive, CompanyLive).pipe(Layer.provide(AuthLive));
+const Domain = Layer.mergeAll(
+  UsersRepoLive,
+  CompanyCheckDomain,
+  CompanyServiceLive.pipe(Layer.provide(CompanyRepoLive), Layer.provide(CompanyCheckDomain)),
+);
+
+const Handlers = Layer.mergeAll(HealthLive, CompanyLive, CompanyCheckLive).pipe(
+  Layer.provide(AuthLive),
+);
 
 const HttpRoutes = Layer.mergeAll(HttpApiLive, AuthCatchallLive, AuthMiddleware, StaticLive).pipe(
   Layer.provide(AuthLive),
@@ -34,7 +51,8 @@ const AppLive = Layer.mergeAll(
   // response and would buffer the stream until completion.
   RpcLive.pipe(Layer.provide(Handlers), Layer.provide(RpcSerialization.layerNdjson)),
   HttpRoutes,
-).pipe(Layer.provide(Domain), Layer.provide(Infra));
+  CompanyCheckWorkflowLive,
+).pipe(Layer.provide(Domain), Layer.provide(Infra), Layer.provide(WorkflowEngineLive));
 
 const PortConfig = Config.int("PORT").pipe(Config.withDefault(38412));
 

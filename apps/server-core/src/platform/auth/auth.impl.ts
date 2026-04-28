@@ -2,16 +2,11 @@ import { Config, Effect, Layer, Option, Redacted } from "effect";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
 import { Db } from "../db.contract";
 import { Auth, ErrorAuth } from "./auth.contract";
-import { user as authUser } from "./auth.table";
 
 const BASE_PATH = "/api/auth";
 const DEFAULT_GOOGLE_DISCOVERY = "https://accounts.google.com/.well-known/openid-configuration";
-const ALLOWED_EMAIL_DOMAIN = "capital.kndwin.dev";
-
-const isAllowedEmail = (email: string) => email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`);
 
 const AuthConfig = Config.all({
   secret: Config.redacted("BETTER_AUTH_SECRET").pipe(Config.option),
@@ -79,31 +74,6 @@ export const AuthLive = Layer.effect(
       onAPIError: {
         errorURL: "/login",
       },
-      databaseHooks: {
-        user: {
-          create: {
-            before: (user) => Promise.resolve(isAllowedEmail(user.email)),
-          },
-          update: {
-            before: (user) =>
-              Promise.resolve(user.email === undefined ? undefined : isAllowedEmail(user.email)),
-          },
-        },
-        session: {
-          create: {
-            before: (session) =>
-              db.client
-                .select({ email: authUser.email })
-                .from(authUser)
-                .where(eq(authUser.id, session.userId))
-                .limit(1)
-                .then((rows) => {
-                  const email = rows[0]?.email;
-                  return email === undefined ? false : isAllowedEmail(email);
-                }),
-          },
-        },
-      },
       plugins: google ? [genericOAuth({ config: [google] })] : [],
     });
 
@@ -126,14 +96,10 @@ export const AuthLive = Layer.effect(
           catch: wrap,
         }).pipe(
           Effect.map((res) => ({
-            user:
-              res?.user && isAllowedEmail(res.user.email)
-                ? { id: res.user.id, email: res.user.email, name: res.user.name }
-                : null,
-            session:
-              res?.session && res.user && isAllowedEmail(res.user.email)
-                ? { id: res.session.id, userId: res.session.userId }
-                : null,
+            user: res?.user
+              ? { id: res.user.id, email: res.user.email, name: res.user.name }
+              : null,
+            session: res?.session ? { id: res.session.id, userId: res.session.userId } : null,
           })),
         ),
       signOut: (headers) =>

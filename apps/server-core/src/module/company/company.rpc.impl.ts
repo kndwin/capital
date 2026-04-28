@@ -16,6 +16,10 @@ export const CompanyLive = CompanyRpcs.toLayer(
         yield* Effect.annotateCurrentSpan({ "company.id": id });
         return yield* service.get(id).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
       }),
+      CompanyDetailGet: Effect.fn("Rpc.CompanyDetailGet")(function* ({ id }) {
+        yield* Effect.annotateCurrentSpan({ "company.id": id });
+        return yield* service.getDetail(id).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
+      }),
     };
   }),
 );

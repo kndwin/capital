@@ -1,22 +1,27 @@
-import { Clock, Context, Effect, Layer, Schema } from "effect";
+import { Clock, Context, Effect, Layer } from "effect";
+import { CompanyCheckService } from "../company-check/company-check.service";
+import { ErrorCompanyNotFound } from "./company.error";
 import { CompanyRepo } from "./company.repo";
-import type { Company, CompanyCreateInput } from "./company.schema";
+import type {
+  Company,
+  CompanyDetail,
+  CompanyCreateInput,
+  CompanySource,
+  CompanySourceInsight,
+} from "./company.schema";
+import { toCompanyId } from "./company.util";
 
 const withModuleLogs = Effect.annotateLogs({ module: "company" });
-
-export class ErrorCompanyNotFound extends Schema.TaggedErrorClass<ErrorCompanyNotFound>()(
-  "ErrorCompanyNotFound",
-  { id: Schema.String },
-) {}
 
 export class CompanyService extends Context.Service<CompanyService>()("module/CompanyService", {
   make: Effect.gen(function* () {
     const repo = yield* CompanyRepo;
+    const companyCheck = yield* CompanyCheckService;
 
     const create = Effect.fn("CompanyService.create")(function* (input: CompanyCreateInput) {
       const now = yield* Clock.currentTimeMillis;
       const company: Company = {
-        id: `${toCompanyId(input.name)}-${now}`,
+        id: `${toCompanyId({ name: input.name })}-${now}`,
         name: input.name,
         description: null,
         website: null,
@@ -40,6 +45,18 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
       return company;
     }, withModuleLogs);
 
+    const upsertSource = Effect.fn("CompanyService.upsertSource")(function* (input: CompanySource) {
+      return yield* repo.upsertSource(input);
+    }, withModuleLogs);
+
+    const upsertSourceInsight = Effect.fn("CompanyService.upsertSourceInsight")(function* (
+      input: CompanySourceInsight,
+    ) {
+      const insight = yield* repo.upsertSourceInsight(input);
+      yield* companyCheck.enqueueRun(input.companyId, "source_insights_changed", input.id);
+      return insight;
+    }, withModuleLogs);
+
     const get = Effect.fn("CompanyService.get")(function* (id: string) {
       yield* Effect.annotateCurrentSpan({ "company.id": id });
       const company = yield* repo.get(id);
@@ -51,17 +68,30 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
       return yield* repo.list();
     }, withModuleLogs);
 
-    return { create, upsert, get, list } as const;
+    const getDetail = Effect.fn("CompanyService.getDetail")(function* (id: string) {
+      yield* Effect.annotateCurrentSpan({ "company.id": id });
+      const company = yield* get(id);
+      const sources = yield* repo.listSources(id);
+      const insights = yield* repo.listSourceInsights(id);
+      const checkGroups = yield* companyCheck.getGroups(id);
+      return {
+        company,
+        checkGroups,
+        sources,
+        insights,
+      } satisfies CompanyDetail;
+    }, withModuleLogs);
+
+    return {
+      create,
+      upsert,
+      upsertSource,
+      upsertSourceInsight,
+      get,
+      getDetail,
+      list,
+    } as const;
   }),
 }) {}
 
 export const CompanyServiceLive = Layer.effect(CompanyService, CompanyService.make);
-
-function toCompanyId(name: string) {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || "company";
-}

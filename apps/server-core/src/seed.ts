@@ -1,5 +1,11 @@
 import { BunRuntime } from "@effect/platform-bun";
 import { Effect, Layer, Logger, Redacted } from "effect";
+import { CompanyCheckEngineQueueNoopLive } from "./module/company-check/company-check.queue";
+import { CompanyCheckRepoLive } from "./module/company-check/company-check.repo";
+import {
+  CompanyCheckService,
+  CompanyCheckServiceLive,
+} from "./module/company-check/company-check.service";
 import { CompanyRepoLive } from "./module/company/company.repo";
 import { seedCompanies } from "./module/company/company.seed";
 import { CompanyService, CompanyServiceLive } from "./module/company/company.service";
@@ -9,7 +15,7 @@ import { makeDb } from "./platform/db.impl";
 
 type SeedScenario = {
   readonly name: string;
-  readonly run: Effect.Effect<void, unknown, CompanyService>;
+  readonly run: Effect.Effect<void, unknown, CompanyService | CompanyCheckService>;
 };
 
 const SeedDbLive = Layer.unwrap(
@@ -21,7 +27,16 @@ const SeedDbLive = Layer.unwrap(
   }),
 );
 
-const SeedLive = CompanyServiceLive.pipe(Layer.provide(CompanyRepoLive), Layer.provide(SeedDbLive));
+const CompanyCheckSeedLive = CompanyCheckServiceLive.pipe(
+  Layer.provide(CompanyCheckRepoLive),
+  Layer.provide(CompanyRepoLive),
+  Layer.provide(CompanyCheckEngineQueueNoopLive),
+);
+
+const SeedLive = Layer.mergeAll(
+  CompanyCheckSeedLive,
+  CompanyServiceLive.pipe(Layer.provide(CompanyRepoLive), Layer.provide(CompanyCheckSeedLive)),
+).pipe(Layer.provide(SeedDbLive));
 
 const scenarios: ReadonlyArray<SeedScenario> = [
   {

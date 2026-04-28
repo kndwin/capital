@@ -52,13 +52,13 @@ function LoginPage() {
                 })
               : authError
           }
-          errorTitle={authError ? "Company account required" : undefined}
+          errorTitle={authError ? "Sign in failed" : undefined}
           onGoogleSignIn={async () => {
             const exit = await signIn({
               payload: {
                 providerId: "google",
                 callbackURL: "/",
-                errorCallbackURL: "/login?reason=domain",
+                errorCallbackURL: "/login",
               },
             });
             if (Exit.isSuccess(exit) && exit.value.url) {
@@ -77,7 +77,7 @@ function getAuthErrorMessage(error?: string, reason?: string) {
     error === "unable_to_create_user" ||
     error === "unable_to_create_session"
   ) {
-    return "Capital is limited to capital accounts. Sign in with your @capital.kndwin.dev Google account.";
+    return "Google sign-in could not be completed. Please try again.";
   }
   return error ? "Google sign-in could not be completed. Please try again." : null;
 }

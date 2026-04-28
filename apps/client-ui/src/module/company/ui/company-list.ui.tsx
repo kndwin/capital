@@ -1,20 +1,10 @@
 import type { Company } from "@capital/server-core/rpc";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/shared/ui/empty.ui";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/ui/empty.ui";
 import { Skeleton } from "@/shared/ui/skeleton.ui";
 import { cn } from "@/shared/util/cn.util";
 import { Link } from "@tanstack/react-router";
 
-export function CompanyList({
-  companies,
-}: {
-  readonly companies: ReadonlyArray<Company>;
-}) {
+export function CompanyList({ companies }: { readonly companies: ReadonlyArray<Company> }) {
   return (
     <div
       data-slot="company-list"
@@ -47,9 +37,8 @@ export function CompanyList({
                 {company.name}
               </h2>
               <p className="mt-1 truncate text-xs text-muted-foreground">
-                {[company.sector, formatStage(company.stage)]
-                  .filter(Boolean)
-                  .join(" / ") || "Uncategorized"}
+                {[company.sector, formatStage(company.stage)].filter(Boolean).join(" / ") ||
+                  "Uncategorized"}
               </p>
             </div>
           </div>
@@ -97,13 +86,7 @@ function ScoreMeter({
   );
 }
 
-function Metric({
-  label,
-  value,
-}: {
-  readonly label: string;
-  readonly value: string;
-}) {
+function Metric({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div
       data-slot="company-list-metric"
@@ -112,9 +95,7 @@ function Metric({
       <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground lg:hidden">
         {label}
       </span>
-      <span className="text-sm text-muted-foreground tabular-nums">
-        {value}
-      </span>
+      <span className="text-sm text-muted-foreground tabular-nums">{value}</span>
     </div>
   );
 }
@@ -150,16 +131,14 @@ function getVerdict(company: Company): Verdict {
   if (company.riskLevel === "low" || company.score >= 80) {
     return {
       label: "Invest",
-      className:
-        "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
       barClassName: "bg-emerald-500/70",
     };
   }
   if (company.score >= 60) {
     return {
       label: "Lean invest",
-      className:
-        "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+      className: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
       barClassName: "bg-amber-500/70",
     };
   }
@@ -187,17 +166,11 @@ function getInitials(name: string) {
 }
 
 function getSourceCount(company: Company) {
-  return Math.max(
-    1,
-    Math.min(8, (company.name.length % 7) + (company.website ? 1 : 0)),
-  );
+  return Math.max(1, Math.min(8, (company.name.length % 7) + (company.website ? 1 : 0)));
 }
 
 function formatUpdatedAt(updatedAt: number) {
-  const daysAgo = Math.max(
-    0,
-    Math.round((1_777_680_000_000 - updatedAt) / 86_400_000),
-  );
+  const daysAgo = Math.max(0, Math.round((1_777_680_000_000 - updatedAt) / 86_400_000));
   if (daysAgo === 0) return "today";
   if (daysAgo === 1) return "1d ago";
   return `${daysAgo}d ago`;
@@ -205,10 +178,7 @@ function formatUpdatedAt(updatedAt: number) {
 
 export function CompanyListLoading() {
   return (
-    <div
-      data-slot="company-list-loading"
-      className="overflow-hidden rounded-xl border bg-card"
-    >
+    <div data-slot="company-list-loading" className="overflow-hidden rounded-xl border bg-card">
       <div className="hidden grid-cols-[minmax(16rem,1.4fr)_minmax(15rem,1fr)_9rem_6rem_7rem] gap-4 border-b bg-muted/30 px-4 py-3 lg:grid">
         {Array.from({ length: 5 }, (_, index) => (
           <Skeleton key={index} className="h-3 w-20" />
@@ -246,8 +216,7 @@ export function CompanyListEmpty() {
         <EmptyMedia variant="icon">C</EmptyMedia>
         <EmptyTitle>No companies yet</EmptyTitle>
         <EmptyDescription>
-          Run the seed command after pushing the database schema to add sample
-          diligence targets.
+          Run the seed command after pushing the database schema to add sample diligence targets.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -256,10 +225,7 @@ export function CompanyListEmpty() {
 
 export function CompanyListError() {
   return (
-    <Empty
-      data-slot="company-list-error"
-      className="min-h-96 border border-destructive/30"
-    >
+    <Empty data-slot="company-list-error" className="min-h-96 border border-destructive/30">
       <EmptyHeader>
         <EmptyMedia variant="icon">!</EmptyMedia>
         <EmptyTitle>Companies could not be loaded</EmptyTitle>

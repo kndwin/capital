@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/unstable/reactivity";
 import type { Company } from "@capital/server-core/rpc";
-import { companyAtom } from "./company.atom";
+import { companyDetailAtom } from "./company.atom";
 import { CompanyDetail, CompanyDetailError, CompanyDetailLoading } from "./ui/company-detail.ui";
 import {
   Breadcrumb,
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/company/$companyId")({
 
 function CompanyDetailPage() {
   const { companyId } = Route.useParams();
-  const company = useAtomValue(companyAtom(companyId));
+  const company = useAtomValue(companyDetailAtom(companyId));
 
   return (
     <ModuleLayout>
@@ -28,14 +28,14 @@ function CompanyDetailPage() {
         {AsyncResult.match(company, {
           onInitial: () => <CompanyDetailBreadcrumb />,
           onFailure: () => <CompanyDetailBreadcrumb />,
-          onSuccess: (result) => <CompanyDetailBreadcrumb company={result.value} />,
+          onSuccess: (result) => <CompanyDetailBreadcrumb company={result.value.company} />,
         })}
       </ModuleLayoutHeader>
       <ModuleLayoutBody>
         {AsyncResult.match(company, {
           onInitial: () => <CompanyDetailLoading />,
           onFailure: () => <CompanyDetailError />,
-          onSuccess: (result) => <CompanyDetail company={result.value} />,
+          onSuccess: (result) => <CompanyDetail detail={result.value} />,
         })}
       </ModuleLayoutBody>
     </ModuleLayout>

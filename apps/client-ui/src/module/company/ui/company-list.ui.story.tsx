@@ -69,8 +69,7 @@ export const Many: Story = {
         ...base,
         id: "cordage",
         name: "Cordage",
-        description:
-          "Developer tooling for contract test generation across API-first teams.",
+        description: "Developer tooling for contract test generation across API-first teams.",
         sector: "Devtools",
         stage: "pre_seed",
         score: 54,

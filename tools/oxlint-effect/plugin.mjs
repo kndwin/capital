@@ -30,8 +30,15 @@ const SERVER_CORE_SKILLS = {
   repo: "apps/server-core/src/module/module.repo.skill.md",
   schema: "apps/server-core/src/module/module.schema.skill.md",
   table: "apps/server-core/src/module/module.table.skill.md",
+  util: "apps/server-core/src/module/module.util.skill.md",
   module: "apps/server-core/src/module/module.skill.md",
 };
+
+function utilSkillPath(fname) {
+  return fname.replace(/\\/g, "/").includes("/apps/server-core/")
+    ? SERVER_CORE_SKILLS.util
+    : CLIENT_UI_SKILLS.util;
+}
 
 function relatedSkillPath(fname) {
   const base = path.basename(fname);
@@ -57,6 +64,7 @@ function relatedSkillPath(fname) {
     if (base.endsWith(".repo.ts")) return SERVER_CORE_SKILLS.repo;
     if (base.endsWith(".schema.ts")) return SERVER_CORE_SKILLS.schema;
     if (base.endsWith(".table.ts")) return SERVER_CORE_SKILLS.table;
+    if (/\.util\.tsx?$/.test(base)) return SERVER_CORE_SKILLS.util;
     return SERVER_CORE_SKILLS.module;
   }
   return null;
@@ -227,7 +235,7 @@ const utilExportsOnlyFunctions = Rule.define({
         ctx,
         node,
         "util files may only export functions — move values/classes to a module or atom",
-        CLIENT_UI_SKILLS.util,
+        utilSkillPath(ctx.filename),
       );
     const isFnInit = (init) =>
       init != null &&
@@ -284,7 +292,7 @@ const utilTestCoversAllExports = Rule.define({
         ctx,
         node,
         `util export "${name}" has no describe("${name}", ...) block in ${path.basename(testPath)}`,
-        CLIENT_UI_SKILLS.util,
+        utilSkillPath(ctx.filename),
       );
     return {
       ExportNamedDeclaration: (node) => {
@@ -298,6 +306,53 @@ const utilTestCoversAllExports = Rule.define({
           for (const decl of d.declarations) {
             if (decl.id.type === "Identifier" && !covers(decl.id.name)) {
               return reportMissing(node, decl.id.name);
+            }
+          }
+        }
+        return Effect.void;
+      },
+    };
+  },
+});
+
+const utilExportObjectParams = Rule.define({
+  name: "util-export-object-params",
+  meta: Rule.meta({
+    type: "problem",
+    description: "Exported util functions must take exactly one object parameter",
+  }),
+  create: function* () {
+    const ctx = yield* RuleContext;
+    if (!/\.util\.tsx?$/.test(ctx.filename)) return {};
+    const report = (node, name) =>
+      reportWithSkill(
+        ctx,
+        node,
+        `util export "${name}" must take exactly one object parameter`,
+        utilSkillPath(ctx.filename),
+      );
+    const hasOneObjectParam = (fn) => {
+      if (fn.params == null || fn.params.length !== 1) return false;
+      const param = fn.params[0];
+      return param.type === "ObjectPattern";
+    };
+    const checkFn = (node, name, fn) => (hasOneObjectParam(fn) ? Effect.void : report(node, name));
+    return {
+      ExportNamedDeclaration: (node) => {
+        const d = node.declaration;
+        if (d == null) return Effect.void;
+        if (d.type === "FunctionDeclaration" && d.id != null) {
+          return checkFn(node, d.id.name, d);
+        }
+        if (d.type === "VariableDeclaration") {
+          for (const decl of d.declarations) {
+            if (decl.id.type !== "Identifier") continue;
+            const init = decl.init;
+            if (
+              init != null &&
+              (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression")
+            ) {
+              if (!hasOneObjectParam(init)) return report(node, decl.id.name);
             }
           }
         }
@@ -1049,6 +1104,7 @@ export default Plugin.define({
     "require-util-suffix": requireUtilSuffix,
     "util-exports-only-functions": utilExportsOnlyFunctions,
     "util-test-covers-all-exports": utilTestCoversAllExports,
+    "util-export-object-params": utilExportObjectParams,
     "hook-exports-use-prefix": hookExportsUsePrefix,
     "require-companion-test": requireCompanionTest,
     "require-companion-story": requireCompanionStory,

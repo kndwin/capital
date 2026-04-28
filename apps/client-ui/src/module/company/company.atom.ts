@@ -12,4 +12,6 @@ export const companiesAtom = CompanyClient.query("CompanyList", undefined, {
 
 export const companyAtom = (id: string) => CompanyClient.query("CompanyGet", { id });
 
+export const companyDetailAtom = (id: string) => CompanyClient.query("CompanyDetailGet", { id });
+
 export const createCompany = CompanyClient.mutation("CompanyCreate");
