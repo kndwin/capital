@@ -50,14 +50,16 @@ const LoggerLive = Layer.unwrap(
 const ServerLive = Layer.unwrap(
   Effect.gen(function* () {
     const port = yield* PortConfig;
-    return HttpRouter.serve(AppLive).pipe(Layer.provide(BunHttpServer.layer({ port })));
+    return HttpRouter.serve(AppLive).pipe(
+      Layer.provide(BunHttpServer.layer({ hostname: "0.0.0.0", port })),
+    );
   }),
 );
 
 BunRuntime.runMain(
   Effect.gen(function* () {
     const port = yield* PortConfig;
-    yield* Effect.log(`Server listening on http://localhost:${port}`);
+    yield* Effect.log(`Server listening on http://0.0.0.0:${port}`);
     yield* Layer.launch(ServerLive);
   }).pipe(Effect.provide(LoggerLive)),
 );
