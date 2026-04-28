@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "@tanstack/react-router";
 import { Logo } from "@/shared/ui/logo.ui";
 import { ScrollArea } from "@/shared/ui/scroll-area.ui";
 import {
@@ -19,10 +20,12 @@ import { cn } from "@/shared/util/cn.util";
 
 export function ModuleLayoutSidebar({
   footer,
+  headerActions,
   headerExtra,
   navItems = [],
 }: {
   footer?: React.ReactNode;
+  headerActions?: React.ReactNode;
   headerExtra?: React.ReactNode;
   navItems?: ReadonlyArray<{
     readonly href: string;
@@ -38,8 +41,13 @@ export function ModuleLayoutSidebar({
           <Logo />
           <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Capital</span>
           {headerExtra ? (
-            <span className="ml-auto flex items-center group-data-[collapsible=icon]:hidden">
+            <span className="flex items-center group-data-[collapsible=icon]:hidden">
               {headerExtra}
+            </span>
+          ) : null}
+          {headerActions ? (
+            <span className="ml-auto flex items-center group-data-[collapsible=icon]:hidden">
+              {headerActions}
             </span>
           ) : null}
         </div>
@@ -55,10 +63,10 @@ export function ModuleLayoutSidebar({
                       isActive={item.isActive}
                       tooltip={item.label}
                       render={
-                        <a href={item.href}>
+                        <Link to={item.href}>
                           {item.icon}
                           <span>{item.label}</span>
-                        </a>
+                        </Link>
                       }
                     />
                   </SidebarMenuItem>

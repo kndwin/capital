@@ -1,6 +1,8 @@
 import { Config, Redacted } from "effect";
 
-const DbDirectUrl = Config.redacted("DB_URL");
+const DbDirectUrl = Config.redacted("DB_URL").pipe(
+  Config.orElse(() => Config.redacted("DATABASE_URL")),
+);
 
 const DbPartsUrl = Config.all({
   host: Config.string("DB_HOST"),

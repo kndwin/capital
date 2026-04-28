@@ -33,8 +33,18 @@ function withRouter(
       </SidebarProvider>
     ),
   });
+  const companyRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/company",
+    component: () => (
+      <SidebarProvider>
+        <ModuleLayoutSidebar navItems={navItems} />
+        {children}
+      </SidebarProvider>
+    ),
+  });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([homeRoute]),
+    routeTree: rootRoute.addChildren([homeRoute, companyRoute]),
     history: createMemoryHistory({ initialEntries: ["/"] }),
   });
   return <RouterProvider router={router} />;

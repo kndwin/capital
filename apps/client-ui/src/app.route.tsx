@@ -6,9 +6,10 @@ import { HttpClient } from "@capital/client-api/http-atom";
 import { AuthPopover } from "@/module/auth/ui/auth-popover.ui";
 import { HealthDot } from "@/module/health/health.ui";
 import { useHealthStatus } from "@/module/health/use-health-status.hook";
-import { ThemeProvider } from "@/shared/provider/theme.provider";
+import { ThemeProvider, useTheme } from "@/shared/provider/theme.provider";
 import { ModuleLayoutSidebar } from "@/shared/ui/module-layout.ui";
 import { SidebarProvider } from "@/shared/ui/sidebar.ui";
+import { ThemeToggle } from "@/shared/ui/theme-toggle.ui";
 import { TooltipProvider } from "@/shared/ui/tooltip.ui";
 
 export type SessionUser = {
@@ -63,6 +64,7 @@ function AuthenticatedLayout() {
   const matches = useMatches();
   const router = useRouter();
   const health = useHealthStatus();
+  const { resolvedTheme, setTheme } = useTheme();
   const signOut = useAtomSet(HttpClient.mutation("auth", "signOut"), {
     mode: "promiseExit",
   });
@@ -76,11 +78,16 @@ function AuthenticatedLayout() {
     void router.navigate({ to: "/login", search: () => ({}) });
   };
 
+  const handleThemeToggle = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
+
   return (
     <SidebarProvider>
       <ModuleLayoutSidebar
         footer={user ? <AuthPopover user={user} onLogout={handleLogout} /> : null}
         headerExtra={<HealthDot status={health} />}
+        headerActions={<ThemeToggle resolvedTheme={resolvedTheme} onToggle={handleThemeToggle} />}
         navItems={[
           {
             href: "/company",

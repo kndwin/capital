@@ -13,6 +13,7 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
   theme: Theme;
+  resolvedTheme: ResolvedTheme;
   setTheme: (theme: Theme) => void;
 };
 
@@ -88,6 +89,7 @@ export function ThemeProvider({
 
     return defaultTheme;
   });
+  const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme>(() => getSystemTheme());
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
@@ -104,6 +106,7 @@ export function ThemeProvider({
       const restoreTransitions = disableTransitionOnChange ? disableTransitionsTemporarily() : null;
 
       root.setAttribute("data-theme", resolvedTheme);
+      setResolvedTheme(resolvedTheme);
 
       if (restoreTransitions) {
         restoreTransitions();
@@ -199,9 +202,10 @@ export function ThemeProvider({
   const value = React.useMemo(
     () => ({
       theme,
+      resolvedTheme,
       setTheme,
     }),
-    [theme, setTheme],
+    [theme, resolvedTheme, setTheme],
   );
 
   return (
