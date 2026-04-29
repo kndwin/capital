@@ -16,9 +16,28 @@ export const CompanyLive = CompanyRpcs.toLayer(
         yield* Effect.annotateCurrentSpan({ "company.id": id });
         return yield* service.get(id).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
       }),
+      CompanyUpdate: Effect.fn("Rpc.CompanyUpdate")(function* (input) {
+        yield* Effect.annotateCurrentSpan({ "company.id": input.id });
+        return yield* service.update(input).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
+      }),
+      CompanyDelete: Effect.fn("Rpc.CompanyDelete")(function* ({ id }) {
+        yield* Effect.annotateCurrentSpan({ "company.id": id });
+        return yield* service.delete(id).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
+      }),
       CompanyDetailGet: Effect.fn("Rpc.CompanyDetailGet")(function* ({ id }) {
         yield* Effect.annotateCurrentSpan({ "company.id": id });
         return yield* service.getDetail(id).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
+      }),
+      CompanySourceCreate: Effect.fn("Rpc.CompanySourceCreate")(function* (input) {
+        yield* Effect.annotateCurrentSpan({ "company.id": input.companyId });
+        return yield* service.createSource(input).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
+      }),
+      CompanySourceRetry: Effect.fn("Rpc.CompanySourceRetry")(function* (input) {
+        yield* Effect.annotateCurrentSpan({
+          "company.id": input.companyId,
+          "source.id": input.sourceId,
+        });
+        return yield* service.retrySource(input).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
       }),
     };
   }),

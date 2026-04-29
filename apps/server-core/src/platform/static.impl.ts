@@ -5,6 +5,7 @@ import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstab
 
 const clientDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../client");
 const indexHtml = path.join(clientDist, "index.html");
+const uploadDir = path.resolve(process.cwd(), ".capital/uploads");
 
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -16,6 +17,7 @@ const contentTypes: Record<string, string> = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
+  ".pdf": "application/pdf",
   ".svg": "image/svg+xml",
   ".webp": "image/webp",
   ".woff": "font/woff",
@@ -30,6 +32,13 @@ const safeFilePath = (pathname: string) => {
   const normalized = path.normalize(decoded).replace(/^\.\.(?:\/|$)/, "");
   const filePath = path.join(clientDist, normalized);
   return filePath.startsWith(clientDist) ? filePath : indexHtml;
+};
+
+const safeUploadPath = (pathname: string) => {
+  const decoded = decodeURIComponent(pathname.replace(/^\/uploads\/?/, ""));
+  const normalized = path.normalize(decoded).replace(/^\.\.(?:\/|$)/, "");
+  const filePath = path.join(uploadDir, normalized);
+  return filePath.startsWith(uploadDir) ? filePath : null;
 };
 
 const responseForFile = Effect.fn("responseForFile")(function* (
@@ -63,6 +72,14 @@ export const StaticLive = HttpRouter.use((router) =>
       const { pathname } = new URL(webRequest.url);
       if (pathname.startsWith("/api/")) {
         return HttpServerResponse.empty({ status: 404 });
+      }
+      if (pathname.startsWith("/uploads/")) {
+        const uploadPath = safeUploadPath(pathname);
+        if (!uploadPath) return HttpServerResponse.empty({ status: 404 });
+        const exists = yield* Effect.promise(() => Bun.file(uploadPath).exists());
+        if (!exists) return HttpServerResponse.empty({ status: 404 });
+        const uploadResponse = yield* responseForFile(uploadPath, pathname);
+        return HttpServerResponse.fromWeb(uploadResponse);
       }
       const filePath = pathname === "/" ? indexHtml : safeFilePath(pathname);
       const webResponse = yield* responseForFile(filePath, pathname);

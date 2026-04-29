@@ -1,0 +1,171 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 380px;
+  background: #f5f4ed;
+  color: #141413;
+  font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  line-height: 1.5;
+}
+
+.shell {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #c9c4b4;
+  border-radius: 12px;
+  background: #faf9f5;
+  box-shadow: 0 1px 0 rgba(20, 20, 19, 0.05);
+}
+
+.brand img {
+  width: 24px;
+  height: 24px;
+}
+
+.brand span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.eyebrow {
+  margin: 0;
+  color: #6b6a64;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #6b6a64;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid #c9c4b4;
+  border-radius: 8px;
+  background: #faf9f5;
+  color: #141413;
+  font: inherit;
+  padding: 9px 10px;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: #1b365d;
+  box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.12);
+}
+
+.preview {
+  display: grid;
+  gap: 6px;
+  max-height: 150px;
+  overflow: hidden;
+  border: 1px solid #c9c4b4;
+  border-radius: 12px;
+  background: #faf9f5;
+  padding: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.preview strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preview span,
+.preview p,
+.status {
+  margin: 0;
+  color: #6b6a64;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.error {
+  margin: 0;
+  border: 1px solid rgba(157, 58, 58, 0.24);
+  border-radius: 10px;
+  background: rgba(157, 58, 58, 0.1);
+  color: #9d3a3a;
+  padding: 9px 10px;
+  font-size: 12px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 10px;
+}
+
+button {
+  border: 1px solid #1b365d;
+  border-radius: 8px;
+  background: #1b365d;
+  color: #faf9f5;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 10px 12px;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+button:first-child {
+  border-color: #c9c4b4;
+  background: #faf9f5;
+  color: #3d3d3a;
+}
+
+button:not(:disabled):hover {
+  background: #122746;
+  border-color: #122746;
+}
+
+button:first-child:not(:disabled):hover {
+  background: #e4ecf5;
+  border-color: rgba(27, 54, 93, 0.18);
+  color: #1b365d;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

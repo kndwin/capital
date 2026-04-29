@@ -26,36 +26,75 @@ const sample: Company = {
   updatedAt: 1_777_334_400_000,
 };
 
+let lastUpsertedCompany: Company | undefined;
+
+function getLastUpsertedCompany() {
+  return lastUpsertedCompany;
+}
+
 const CompanyRepoTestLive = Layer.effect(
   CompanyRepo,
   Effect.gen(function* () {
     const companies = yield* Ref.make(new Map<string, Company>().set(sample.id, sample));
     const insights = yield* Ref.make(
-      new Map<string, CompanySourceInsight>().set("deck-growth", {
-        id: "deck-growth",
-        companyId: sample.id,
-        sourceId: "deck",
-        kind: "excerpt",
-        locator: "P7",
-        text: "We reached $1.2M ARR with 22% MoM growth.",
-        extractorVersion: "test-v1",
-        insightWorkflowRunId: "test-run",
-        order: 10,
-        updatedAt: sample.updatedAt,
-      }),
+      new Map<string, CompanySourceInsight>([
+        [
+          "deck-growth",
+          {
+            id: "deck-growth",
+            companyId: sample.id,
+            sourceId: "deck",
+            kind: "excerpt",
+            locator: "P7",
+            text: "We reached $1.2M ARR with 22% MoM growth.",
+            extractorVersion: "test-v1",
+            insightWorkflowRunId: "test-run",
+            order: 10,
+            updatedAt: sample.updatedAt,
+          },
+        ],
+        [
+          "deck-market",
+          {
+            id: "deck-market",
+            companyId: sample.id,
+            sourceId: "deck",
+            kind: "excerpt",
+            locator: "P4",
+            text: "The company targets a $12B TAM with strong market growth tailwinds.",
+            extractorVersion: "test-v1",
+            insightWorkflowRunId: "test-run",
+            order: 20,
+            updatedAt: sample.updatedAt,
+          },
+        ],
+      ]),
     );
     return CompanyRepo.of({
       upsert: Effect.fn("CompanyRepoTest.upsert")(function* (input: Company) {
+        lastUpsertedCompany = input;
         yield* Ref.update(companies, (items) => new Map(items).set(input.id, input));
         return input;
       }),
       get: Effect.fn("CompanyRepoTest.get")(function* (id: string) {
         return (yield* Ref.get(companies)).get(id);
       }),
+      delete: Effect.fn("CompanyRepoTest.delete")(function* (id: string) {
+        yield* Ref.update(companies, (items) => {
+          const next = new Map(items);
+          next.delete(id);
+          return next;
+        });
+      }),
       list: Effect.fn("CompanyRepoTest.list")(function* () {
         return Array.from((yield* Ref.get(companies)).values());
       }),
       upsertSource: (input) => Effect.succeed(input),
+      getSource: () => Effect.succeed(undefined),
+      getSourceAcquiredText: () => Effect.succeed(null),
+      updateSourceStatus: () => Effect.void,
+      updateSourceAcquiredContent: () => Effect.void,
+      nextSourceOrder: () => Effect.succeed(10),
       upsertSourceInsight: Effect.fn("CompanyRepoTest.upsertSourceInsight")(function* (input) {
         yield* Ref.update(insights, (items) => new Map(items).set(input.id, input));
         return input;
@@ -170,6 +209,22 @@ describe("CompanyCheckService", () => {
       assert.strictEqual(groups.length, 5);
       assert.strictEqual(groups[3]?.label, "Traction & Financials");
       assert.strictEqual(groups[3]?.checks.length, 6);
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("updates company score when pitch deck insights match checks", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyCheckService;
+
+      lastUpsertedCompany = undefined;
+      yield* service.runCheckEngine(sample.id, "test");
+      const groups = yield* service.getGroups(sample.id);
+      const company = getLastUpsertedCompany();
+
+      assert.strictEqual(company?.score, 73);
+      assert.strictEqual(company?.riskLevel, "medium");
+      assert.strictEqual(groups.find((group) => group.id === "market")?.score, 60);
+      assert.strictEqual(groups.find((group) => group.id === "traction")?.score, 100);
     }).pipe(Effect.provide(TestLive)),
   );
 });

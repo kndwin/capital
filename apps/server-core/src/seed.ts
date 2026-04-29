@@ -8,6 +8,7 @@ import {
 } from "./module/company-check/company-check.service";
 import { CompanyRepoLive } from "./module/company/company.repo";
 import { seedCompanies } from "./module/company/company.seed";
+import { CompanySourceIngestQueue } from "./module/company/company-source.queue";
 import { CompanyService, CompanyServiceLive } from "./module/company/company.service";
 import { Db } from "./platform/db.contract";
 import { DbSsl, DbUrl } from "./platform/db.config";
@@ -33,9 +34,18 @@ const CompanyCheckSeedLive = CompanyCheckServiceLive.pipe(
   Layer.provide(CompanyCheckEngineQueueNoopLive),
 );
 
+const CompanySourceIngestQueueNoopLive = Layer.succeed(
+  CompanySourceIngestQueue,
+  CompanySourceIngestQueue.of({ enqueue: () => Effect.succeed("seed-noop") }),
+);
+
 const SeedLive = Layer.mergeAll(
   CompanyCheckSeedLive,
-  CompanyServiceLive.pipe(Layer.provide(CompanyRepoLive), Layer.provide(CompanyCheckSeedLive)),
+  CompanyServiceLive.pipe(
+    Layer.provide(CompanyRepoLive),
+    Layer.provide(CompanyCheckSeedLive),
+    Layer.provide(CompanySourceIngestQueueNoopLive),
+  ),
 ).pipe(Layer.provide(SeedDbLive));
 
 const scenarios: ReadonlyArray<SeedScenario> = [

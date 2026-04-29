@@ -1,6 +1,6 @@
 import { Context, Effect, Schema } from "effect";
 import type { PgAsyncDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import type { company } from "../module/company/company.table";
+import type { company, companySource, companySourceInsight } from "../module/company/company.table";
 import type { account, session, user, verification } from "./auth/auth.table";
 
 export class ErrorDb extends Schema.TaggedErrorClass<ErrorDb>()("ErrorDb", {
@@ -10,6 +10,8 @@ export class ErrorDb extends Schema.TaggedErrorClass<ErrorDb>()("ErrorDb", {
 
 export type DbSchema = {
   company: typeof company;
+  companySource: typeof companySource;
+  companySourceInsight: typeof companySourceInsight;
   user: typeof user;
   session: typeof session;
   account: typeof account;

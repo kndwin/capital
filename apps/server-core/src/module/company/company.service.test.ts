@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer, Ref } from "effect";
 import { CompanyCheckService } from "../company-check/company-check.service";
+import { CompanySourceIngestQueue } from "./company-source.queue";
 import { ErrorCompanyNotFound } from "./company.error";
 import { CompanyRepo } from "./company.repo";
 import { CompanyService, CompanyServiceLive } from "./company.service";
@@ -25,6 +26,12 @@ const enqueued: Array<{
   readonly inputKey: string;
 }> = [];
 
+const sourceEnqueued: Array<{
+  readonly companyId: string;
+  readonly sourceId: string;
+  readonly reason: string;
+}> = [];
+
 const TestRepoLive = Layer.effect(
   CompanyRepo,
   Effect.gen(function* () {
@@ -39,6 +46,27 @@ const TestRepoLive = Layer.effect(
       get: Effect.fn("CompanyRepoTest.get")(function* (id: string) {
         return (yield* Ref.get(store)).get(id);
       }),
+      delete: Effect.fn("CompanyRepoTest.delete")(function* (id: string) {
+        yield* Ref.update(store, (companies) => {
+          const next = new Map(companies);
+          next.delete(id);
+          return next;
+        });
+        yield* Ref.update(sources, (items) => {
+          const next = new Map(items);
+          for (const [sourceId, source] of next) {
+            if (source.companyId === id) next.delete(sourceId);
+          }
+          return next;
+        });
+        yield* Ref.update(insights, (items) => {
+          const next = new Map(items);
+          for (const [insightId, insight] of next) {
+            if (insight.companyId === id) next.delete(insightId);
+          }
+          return next;
+        });
+      }),
       list: Effect.fn("CompanyRepoTest.list")(function* () {
         return Array.from((yield* Ref.get(store)).values());
       }),
@@ -46,6 +74,13 @@ const TestRepoLive = Layer.effect(
         yield* Ref.update(sources, (items) => new Map(items).set(input.id, input));
         return input;
       }),
+      getSource: Effect.fn("CompanyRepoTest.getSource")(function* (id: string) {
+        return (yield* Ref.get(sources)).get(id);
+      }),
+      getSourceAcquiredText: () => Effect.succeed(null),
+      updateSourceStatus: () => Effect.void,
+      updateSourceAcquiredContent: () => Effect.void,
+      nextSourceOrder: () => Effect.succeed(10),
       upsertSourceInsight: Effect.fn("CompanyRepoTest.upsertSourceInsight")(function* (
         input: CompanySourceInsight,
       ) {
@@ -105,7 +140,23 @@ const TestCheckServiceLive = Layer.succeed(
 );
 
 const TestLive = CompanyServiceLive.pipe(
-  Layer.provide(Layer.mergeAll(TestRepoLive, TestCheckServiceLive)),
+  Layer.provide(
+    Layer.mergeAll(
+      TestRepoLive,
+      TestCheckServiceLive,
+      Layer.succeed(
+        CompanySourceIngestQueue,
+        CompanySourceIngestQueue.of({
+          enqueue: Effect.fn("CompanySourceIngestQueueTest.enqueue")(function* (input) {
+            yield* Effect.sync(() => {
+              sourceEnqueued.push(input);
+            });
+            return "queued";
+          }),
+        }),
+      ),
+    ),
+  ),
 );
 
 describe("CompanyService", () => {
@@ -113,11 +164,80 @@ describe("CompanyService", () => {
     Effect.gen(function* () {
       const service = yield* CompanyService;
 
-      const company = yield* service.create({ name: "Bevel" });
+      const company = yield* service.create({
+        name: "Bevel",
+        description: null,
+        website: null,
+        source: null,
+      });
 
       assert.strictEqual(company.name, "Bevel");
       assert.strictEqual(company.stage, "unknown");
       assert.strictEqual(company.score, null);
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("creates companies with website and description", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+
+      const company = yield* service.create({
+        name: "Bevel",
+        description: "AI diligence workspace.",
+        website: "https://bevel.example",
+        source: null,
+      });
+
+      assert.strictEqual(company.description, "AI diligence workspace.");
+      assert.strictEqual(company.website, "https://bevel.example");
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("creates an initial source with the company", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+      sourceEnqueued.splice(0, sourceEnqueued.length);
+
+      const company = yield* service.create({
+        name: "Bevel",
+        description: null,
+        website: "https://bevel.example",
+        source: {
+          kind: "url",
+          url: "https://bevel.example/deck",
+          title: "Deck",
+        },
+      });
+      const detail = yield* service.getDetail(company.id);
+
+      assert.strictEqual(detail.sources.length, 1);
+      assert.strictEqual(detail.sources[0]?.title, "Deck");
+      assert.strictEqual(sourceEnqueued.length, 1);
+      assert.strictEqual(sourceEnqueued[0]?.companyId, company.id);
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("creates AI research sources from a prompt", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+      sourceEnqueued.splice(0, sourceEnqueued.length);
+      yield* service.upsert(sample);
+
+      const created = yield* service.createSource({
+        companyId: sample.id,
+        kind: "chat",
+        prompt: "Find recent traction, customers, competitors, and founder background.",
+        title: null,
+      });
+
+      assert.strictEqual(created.kind, "chat");
+      assert.strictEqual(created.title, "Sample Company AI research");
+      assert.strictEqual(
+        created.subtitle,
+        "Find recent traction, customers, competitors, and founder background.",
+      );
+      assert.strictEqual(sourceEnqueued.length, 1);
+      assert.strictEqual(sourceEnqueued[0]?.sourceId, created.id);
     }).pipe(Effect.provide(TestLive)),
   );
 
@@ -134,6 +254,33 @@ describe("CompanyService", () => {
     }).pipe(Effect.provide(TestLive)),
   );
 
+  it.effect("updates editable company fields and preserves score", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+
+      yield* service.upsert(sample);
+      const company = yield* service.update({
+        id: sample.id,
+        name: "Updated Company",
+        description: null,
+        website: "https://updated.example",
+        stage: "series_a",
+        sector: "AI Infrastructure",
+        location: "New York, NY",
+        riskLevel: "low",
+      });
+
+      assert.strictEqual(company.name, "Updated Company");
+      assert.strictEqual(company.description, null);
+      assert.strictEqual(company.website, "https://updated.example");
+      assert.strictEqual(company.stage, "series_a");
+      assert.strictEqual(company.sector, "AI Infrastructure");
+      assert.strictEqual(company.location, "New York, NY");
+      assert.strictEqual(company.riskLevel, "low");
+      assert.strictEqual(company.score, sample.score);
+    }).pipe(Effect.provide(TestLive)),
+  );
+
   it.effect("fails when a company is missing", () =>
     Effect.gen(function* () {
       const service = yield* CompanyService;
@@ -142,6 +289,31 @@ describe("CompanyService", () => {
           ErrorCompanyNotFound: (error) => Effect.succeed(error),
         }),
       );
+
+      assert.instanceOf(result, ErrorCompanyNotFound);
+      assert.strictEqual(result.id, "missing-company");
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("fails when updating a missing company", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+      const result = yield* service
+        .update({
+          id: "missing-company",
+          name: "Missing",
+          description: null,
+          website: null,
+          stage: "unknown",
+          sector: null,
+          location: null,
+          riskLevel: "unknown",
+        })
+        .pipe(
+          Effect.catchTags({
+            ErrorCompanyNotFound: (error) => Effect.succeed(error),
+          }),
+        );
 
       assert.instanceOf(result, ErrorCompanyNotFound);
       assert.strictEqual(result.id, "missing-company");

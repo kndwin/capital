@@ -55,7 +55,7 @@ function HomePage() {
 function PortfolioDashboard({ companies }: { readonly companies: ReadonlyArray<Company> }) {
   const dashboardCompanies = toDashboardCompanies(companies);
   const counts = getToneCounts(dashboardCompanies);
-  const strongest = getStrongest(dashboardCompanies);
+  const scoreRange = getScoreRange(dashboardCompanies);
 
   if (dashboardCompanies.length === 0) {
     return <DashboardEmpty companyCount={companies.length} />;
@@ -84,10 +84,10 @@ function PortfolioDashboard({ companies }: { readonly companies: ReadonlyArray<C
           </div>
           <div data-slot="portfolio-dashboard-composite" className="text-left lg:text-right">
             <div className="text-6xl font-light tabular-nums tracking-tight">
-              {strongest?.score ?? "--"}
+              {scoreRange ?? "--"}
             </div>
             <div className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-              Top score
+              Score range
             </div>
             <Link to="/company" className="mt-2 block text-sm font-medium text-primary">
               View companies -&gt;
@@ -97,7 +97,6 @@ function PortfolioDashboard({ companies }: { readonly companies: ReadonlyArray<C
       </header>
 
       <section aria-labelledby="portfolio-map-title">
-        <TabHeader active="Map" inactive="List" />
         <div className="p-5 lg:p-8">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-5">
             <div className="flex items-center justify-center [writing-mode:vertical-rl] rotate-180 text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
@@ -142,18 +141,6 @@ function PortfolioDashboard({ companies }: { readonly companies: ReadonlyArray<C
         <SummaryRow label="Mixed" value={counts.mixed} tone="mixed" />
         <SummaryRow label="Weak" value={counts.weak} tone="weak" />
       </div>
-    </div>
-  );
-}
-
-function TabHeader({ active, inactive }: { readonly active: string; readonly inactive: string }) {
-  return (
-    <div
-      data-slot="portfolio-dashboard-tabs"
-      className="flex gap-6 border-b px-5 text-sm font-medium"
-    >
-      <div className="border-b border-foreground py-3 text-foreground">{active}</div>
-      <div className="py-3 text-muted-foreground">{inactive}</div>
     </div>
   );
 }
@@ -263,6 +250,12 @@ function getToneCounts(companies: ReadonlyArray<DashboardCompany>) {
   );
 }
 
-function getStrongest(companies: ReadonlyArray<DashboardCompany>) {
-  return [...companies].sort((left, right) => right.score - left.score)[0];
+function getScoreRange(companies: ReadonlyArray<DashboardCompany>) {
+  if (companies.length === 0) return null;
+
+  const scores = companies.map((company) => company.score);
+  const minScore = Math.min(...scores);
+  const maxScore = Math.max(...scores);
+
+  return minScore === maxScore ? `${maxScore}` : `${minScore}-${maxScore}`;
 }

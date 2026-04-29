@@ -127,6 +127,28 @@ describe("evaluateCheck", () => {
     expect(definition).toBeDefined();
     expect(evaluateCheck({ definition: definition!, insights: [insight] }).status).toBe("pass");
   });
+
+  it("evaluates non-traction checks from source insight evidence", () => {
+    const definition = getCheckDefinitions({ _: undefined }).find(
+      (check) => check.id === "market.tam_credibility",
+    );
+    expect(definition).toBeDefined();
+
+    const judgement = evaluateCheck({
+      definition: definition!,
+      insights: [
+        {
+          ...insight,
+          id: "deck-tam",
+          text: "The company targets a $12B TAM in financial operations software.",
+        },
+      ],
+    });
+
+    expect(judgement.status).toBe("concern");
+    expect(judgement.score).toBe(60);
+    expect(judgement.insightIds).toEqual(["deck-tam"]);
+  });
 });
 
 describe("toEngineCheck", () => {

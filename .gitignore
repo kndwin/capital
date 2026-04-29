@@ -1,7 +1,10 @@
 node_modules
+.output
+.wxt
 dist
 .vite
 storybook-static
+.capital
 *.tsbuildinfo
 cdk.out
 .cdk.staging

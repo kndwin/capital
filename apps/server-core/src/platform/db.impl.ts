@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, Redacted } from "effect";
+import { Effect, Layer, Option, Redacted, Scope } from "effect";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
@@ -46,9 +46,12 @@ const wrap = (fn: () => unknown) =>
       }),
   });
 
-export const makeDb = (url: string, ssl: boolean): Effect.Effect<DbService, ErrorDb, never> =>
+export const makeDb = (url: string, ssl: boolean): Effect.Effect<DbService, ErrorDb, Scope.Scope> =>
   Effect.gen(function* () {
-    const client = postgres(url, { max: 10, ssl: ssl ? "require" : false });
+    const client = yield* Effect.acquireRelease(
+      Effect.sync(() => postgres(url, { max: 10, ssl: ssl ? "require" : false })),
+      (client) => Effect.promise(() => client.end()),
+    );
     const db = drizzlePg({ client, schema });
     yield* Effect.tryPromise({
       try: () => migratePg(db, { migrationsFolder }),

@@ -1,10 +1,31 @@
 import type { Company } from "@capital/server-core/rpc";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/shared/ui/alert-dialog.ui";
+import { Button } from "@/shared/ui/button.ui";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/ui/empty.ui";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover.ui";
 import { Skeleton } from "@/shared/ui/skeleton.ui";
 import { cn } from "@/shared/util/cn.util";
 import { Link } from "@tanstack/react-router";
 
-export function CompanyList({ companies }: { readonly companies: ReadonlyArray<Company> }) {
+export function CompanyList({
+  companies,
+  deletingCompanyId,
+  onDeleteCompany,
+}: {
+  readonly companies: ReadonlyArray<Company>;
+  readonly deletingCompanyId?: string | null;
+  readonly onDeleteCompany?: (company: Company) => void;
+}) {
   return (
     <div
       data-slot="company-list"
@@ -12,23 +33,26 @@ export function CompanyList({ companies }: { readonly companies: ReadonlyArray<C
     >
       <div
         data-slot="company-list-header"
-        className="hidden grid-cols-[minmax(16rem,1.4fr)_minmax(15rem,1fr)_9rem_6rem_7rem] gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground lg:grid"
+        className="hidden grid-cols-[minmax(16rem,1.4fr)_minmax(15rem,1fr)_9rem_6rem_7rem_3rem] gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground lg:grid"
       >
         <span>Company</span>
         <span>Score</span>
         <span>Verdict</span>
         <span className="text-right">Sources</span>
         <span className="text-right">Updated</span>
+        <span className="text-right">Actions</span>
       </div>
       {companies.map((company) => (
-        <Link
-          to="/company/$companyId"
-          params={{ companyId: company.id }}
+        <div
           key={company.id}
           data-slot="company-list-item"
-          className="group grid gap-4 border-b px-4 py-4 transition last:border-b-0 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:grid-cols-[minmax(16rem,1.4fr)_minmax(15rem,1fr)_9rem_6rem_7rem] lg:items-center"
+          className="group grid gap-4 border-b px-4 py-4 transition last:border-b-0 hover:bg-muted/30 lg:grid-cols-[minmax(16rem,1.4fr)_minmax(15rem,1fr)_9rem_6rem_7rem_3rem] lg:items-center"
         >
-          <div className="flex min-w-0 items-center gap-3">
+          <Link
+            to="/company/$companyId"
+            params={{ companyId: company.id }}
+            className="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-background text-xs font-medium text-muted-foreground">
               {getInitials(company.name)}
             </div>
@@ -41,7 +65,7 @@ export function CompanyList({ companies }: { readonly companies: ReadonlyArray<C
                   "Uncategorized"}
               </p>
             </div>
-          </div>
+          </Link>
 
           <ScoreMeter score={company.score} verdict={getVerdict(company)} />
 
@@ -54,8 +78,78 @@ export function CompanyList({ companies }: { readonly companies: ReadonlyArray<C
 
           <Metric label="Sources" value={String(getSourceCount(company))} />
           <Metric label="Updated" value={formatUpdatedAt(company.updatedAt)} />
-        </Link>
+          {onDeleteCompany ? (
+            <CompanyListActions
+              company={company}
+              isDeleting={deletingCompanyId === company.id}
+              onDeleteCompany={onDeleteCompany}
+            />
+          ) : null}
+        </div>
       ))}
+    </div>
+  );
+}
+
+function CompanyListActions({
+  company,
+  isDeleting,
+  onDeleteCompany,
+}: {
+  readonly company: Company;
+  readonly isDeleting: boolean;
+  readonly onDeleteCompany: (company: Company) => void;
+}) {
+  return (
+    <div data-slot="company-list-actions" className="flex justify-end">
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Actions for ${company.name}`}
+            />
+          }
+        >
+          ...
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-44">
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex w-full rounded-sm px-2 py-1.5 text-left text-sm text-destructive outline-none hover:bg-accent focus-visible:bg-accent disabled:pointer-events-none disabled:opacity-50"
+                  disabled={isDeleting}
+                />
+              }
+            >
+              {isDeleting ? "Deleting..." : "Delete company"}
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {company.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove the company and its sources from the workspace.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  type="button"
+                  variant="destructive"
+                  disabled={isDeleting}
+                  onClick={() => onDeleteCompany(company)}
+                >
+                  Delete company
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -187,7 +281,7 @@ export function CompanyListLoading() {
       {Array.from({ length: 4 }, (_, index) => (
         <div
           key={index}
-          className="grid gap-4 border-b px-4 py-4 last:border-b-0 lg:grid-cols-[minmax(16rem,1.4fr)_minmax(15rem,1fr)_9rem_6rem_7rem] lg:items-center"
+          className="grid gap-4 border-b px-4 py-4 last:border-b-0 lg:grid-cols-[minmax(16rem,1.4fr)_minmax(15rem,1fr)_9rem_6rem_7rem_3rem] lg:items-center"
         >
           <div className="flex items-center gap-3">
             <Skeleton className="size-10 rounded-lg" />

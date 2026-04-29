@@ -10,8 +10,18 @@ export const companiesAtom = CompanyClient.query("CompanyList", undefined, {
   reactivityKeys: ["companies"],
 });
 
-export const companyAtom = (id: string) => CompanyClient.query("CompanyGet", { id });
+export const companyAtom = (id: string) =>
+  CompanyClient.query("CompanyGet", { id }, { reactivityKeys: [`company:${id}`] });
 
-export const companyDetailAtom = (id: string) => CompanyClient.query("CompanyDetailGet", { id });
+export const companyDetailAtom = (id: string) =>
+  CompanyClient.query("CompanyDetailGet", { id }, { reactivityKeys: [`company:${id}`] });
 
 export const createCompany = CompanyClient.mutation("CompanyCreate");
+
+export const updateCompany = CompanyClient.mutation("CompanyUpdate");
+
+export const deleteCompany = CompanyClient.mutation("CompanyDelete");
+
+export const createCompanySource = CompanyClient.mutation("CompanySourceCreate");
+
+export const retryCompanySource = CompanyClient.mutation("CompanySourceRetry");

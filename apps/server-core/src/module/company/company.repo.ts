@@ -1,8 +1,21 @@
 import { Context, Effect, Layer } from "effect";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
+import {
+  companyCheck,
+  companyCheckInsight,
+  companyCheckOverride,
+  companyCheckRun,
+  companyEngineCheck,
+} from "../company-check/company-check.table";
 import { Db } from "../../platform/db.contract";
 import { company, companySource, companySourceInsight } from "./company.table";
-import type { Company, CompanySource, CompanySourceInsight } from "./company.schema";
+import type {
+  Company,
+  CompanySource,
+  CompanySourceAcquiredContent,
+  CompanySourceInsight,
+  CompanySourceStatus,
+} from "./company.schema";
 
 const selection = {
   id: company.id,
@@ -38,11 +51,21 @@ const toCompanySource = (row: CompanySourceRow): CompanySource => ({
   id: row.id,
   companyId: row.companyId,
   kind: row.kind as CompanySource["kind"],
+  status: row.status as CompanySource["status"],
   title: row.title,
   subtitle: row.subtitle,
   confidence: row.confidence,
   selected: row.selected,
   order: row.order,
+  url: row.url,
+  fileName: row.fileName,
+  fileUrl: row.fileUrl,
+  acquiredProvider: row.acquiredProvider,
+  acquiredText: row.acquiredText,
+  acquiredTextTruncated: row.acquiredTextTruncated,
+  acquiredTextCharCount: row.acquiredTextCharCount,
+  acquiredTextHash: row.acquiredTextHash,
+  error: row.error,
   updatedAt: row.updatedAt.getTime(),
 });
 
@@ -103,6 +126,25 @@ export class CompanyRepo extends Context.Service<CompanyRepo>()("module/CompanyR
         );
         return rows[0] ? toCompany(rows[0] as CompanyRow) : undefined;
       }),
+      delete: Effect.fn("CompanyRepo.delete")(function* (id: string) {
+        yield* Effect.annotateCurrentSpan({ "company.id": id });
+        yield* db.query((d) =>
+          d.delete(companyCheckInsight).where(eq(companyCheckInsight.companyId, id)),
+        );
+        yield* db.query((d) =>
+          d.delete(companyCheckOverride).where(eq(companyCheckOverride.companyId, id)),
+        );
+        yield* db.query((d) =>
+          d.delete(companyEngineCheck).where(eq(companyEngineCheck.companyId, id)),
+        );
+        yield* db.query((d) => d.delete(companyCheckRun).where(eq(companyCheckRun.companyId, id)));
+        yield* db.query((d) => d.delete(companyCheck).where(eq(companyCheck.companyId, id)));
+        yield* db.query((d) =>
+          d.delete(companySourceInsight).where(eq(companySourceInsight.companyId, id)),
+        );
+        yield* db.query((d) => d.delete(companySource).where(eq(companySource.companyId, id)));
+        yield* db.query((d) => d.delete(company).where(eq(company.id, id)));
+      }),
       list: Effect.fn("CompanyRepo.list")(function* () {
         const rows = yield* db.query((d) =>
           d.select(selection).from(company).orderBy(company.name),
@@ -117,27 +159,109 @@ export class CompanyRepo extends Context.Service<CompanyRepo>()("module/CompanyR
               id: input.id,
               companyId: input.companyId,
               kind: input.kind,
+              status: input.status,
               title: input.title,
               subtitle: input.subtitle,
               confidence: input.confidence,
               selected: input.selected,
               order: input.order,
+              url: input.url,
+              fileName: input.fileName,
+              fileUrl: input.fileUrl,
+              acquiredProvider: input.acquiredProvider,
+              acquiredText: input.acquiredText,
+              acquiredTextTruncated: input.acquiredTextTruncated,
+              acquiredTextCharCount: input.acquiredTextCharCount,
+              acquiredTextHash: input.acquiredTextHash,
+              error: input.error,
             })
             .onConflictDoUpdate({
               target: companySource.id,
               set: {
                 companyId: input.companyId,
                 kind: input.kind,
+                status: input.status,
                 title: input.title,
                 subtitle: input.subtitle,
                 confidence: input.confidence,
                 selected: input.selected,
                 order: input.order,
+                url: input.url,
+                fileName: input.fileName,
+                fileUrl: input.fileUrl,
+                acquiredProvider: input.acquiredProvider,
+                acquiredText: input.acquiredText,
+                acquiredTextTruncated: input.acquiredTextTruncated,
+                acquiredTextCharCount: input.acquiredTextCharCount,
+                acquiredTextHash: input.acquiredTextHash,
+                error: input.error,
                 updatedAt: sql`now()`,
               },
             }),
         );
         return input;
+      }),
+      getSource: Effect.fn("CompanyRepo.getSource")(function* (id: string) {
+        const rows = yield* db.query((d) =>
+          d.select().from(companySource).where(eq(companySource.id, id)).limit(1),
+        );
+        return rows[0] ? toCompanySource(rows[0] as CompanySourceRow) : undefined;
+      }),
+      getSourceAcquiredText: Effect.fn("CompanyRepo.getSourceAcquiredText")(function* (id: string) {
+        const rows = yield* db.query((d) =>
+          d
+            .select({ acquiredText: companySource.acquiredText })
+            .from(companySource)
+            .where(eq(companySource.id, id))
+            .limit(1),
+        );
+        return rows[0]?.acquiredText ?? null;
+      }),
+      updateSourceStatus: Effect.fn("CompanyRepo.updateSourceStatus")(function* (input: {
+        readonly id: string;
+        readonly status: CompanySourceStatus;
+        readonly error: string | null;
+      }) {
+        yield* db.query((d) =>
+          d
+            .update(companySource)
+            .set({ status: input.status, error: input.error, updatedAt: sql`now()` })
+            .where(eq(companySource.id, input.id)),
+        );
+      }),
+      updateSourceAcquiredContent: Effect.fn("CompanyRepo.updateSourceAcquiredContent")(
+        function* (input: {
+          readonly sourceId: string;
+          readonly content: CompanySourceAcquiredContent;
+        }) {
+          yield* db.query((d) =>
+            d
+              .update(companySource)
+              .set({
+                subtitle: input.content.finalUrl,
+                url: input.content.finalUrl,
+                acquiredProvider: input.content.provider,
+                acquiredText: input.content.text,
+                acquiredTextTruncated: input.content.textTruncated,
+                acquiredTextCharCount: input.content.textCharCount,
+                acquiredTextHash: input.content.textHash,
+                error: null,
+                updatedAt: sql`now()`,
+              })
+              .where(eq(companySource.id, input.sourceId)),
+          );
+        },
+      ),
+      nextSourceOrder: Effect.fn("CompanyRepo.nextSourceOrder")(function* (companyId: string) {
+        const rows = yield* db.query((d) =>
+          d
+            .select({ order: companySource.order })
+            .from(companySource)
+            .where(eq(companySource.companyId, companyId))
+            .orderBy(desc(companySource.order))
+            .limit(1),
+        );
+        return (rows[0]?.order ?? 0) + 10;
       }),
       upsertSourceInsight: Effect.fn("CompanyRepo.upsertSourceInsight")(function* (
         input: CompanySourceInsight,

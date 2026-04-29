@@ -23,7 +23,7 @@ import {
 } from "./company-check.util";
 
 const withModuleLogs = Effect.annotateLogs({ module: "company-check" });
-const checkEngineVersion = "traction-check-engine-v1";
+const checkEngineVersion = "diligence-check-engine-v2";
 
 export class CompanyCheckService extends Context.Service<CompanyCheckService>()(
   "module/CompanyCheckService",
@@ -108,6 +108,30 @@ export class CompanyCheckService extends Context.Service<CompanyCheckService>()(
         const existingRun = yield* checkRepo.findCompletedCheckRunByInputHash(companyId, inputHash);
         if (existingRun) {
           const engineChecks = yield* checkRepo.listEngineChecks(companyId);
+          const results = getCheckDefinitions({ _: undefined }).map((definition) => {
+            const judgement = evaluateCheck({ definition, insights });
+            const check = engineChecks.find(
+              (candidate) => candidate.checkDefinitionId === definition.id,
+            );
+            return check ? { check, judgement } : null;
+          });
+          for (const link of results.flatMap((result) =>
+            result
+              ? result.judgement.insightIds.map(
+                  (insightId): CompanyCheckInsight => ({
+                    id: `${result.check.id}:${insightId}`,
+                    companyId,
+                    checkDefinitionId: result.check.checkDefinitionId,
+                    insightId,
+                    runId: existingRun.id,
+                    relationship: result.check.status === "fail" ? "conflicts" : "supports",
+                    updatedAt: existingRun.updatedAt,
+                  }),
+                )
+              : [],
+          )) {
+            yield* checkRepo.upsertCheckInsight(link);
+          }
           const overrides = yield* checkRepo.listCheckOverrides(companyId);
           const checkInsights = yield* checkRepo.listCheckInsights(companyId);
           const effectiveChecks = applyOverrides({ engineChecks, overrides, links: checkInsights });

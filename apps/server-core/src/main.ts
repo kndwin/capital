@@ -16,7 +16,14 @@ import {
   CompanyCheckEngineQueueLive,
   CompanyCheckWorkflowLive,
 } from "./module/company-check/company-check.workflow";
+import {
+  CompanySourceIngestQueueLive,
+  CompanySourceWorkflowLive,
+} from "./module/company/company-source.workflow";
+import { CompanyAiServiceLive } from "./module/company-ai/company-ai.service";
 import { HealthLive } from "./module/health/health.rpc.impl";
+import { MemoLive } from "./module/memo/memo.rpc.impl";
+import { MemoServiceLive } from "./module/memo/memo.service";
 import { HttpApiLive } from "./platform/http.impl";
 import { RpcLive } from "./platform/rpc.impl";
 import { StaticLive } from "./platform/static.impl";
@@ -31,13 +38,20 @@ const CompanyCheckDomain = CompanyCheckServiceLive.pipe(
   Layer.provide(CompanyCheckEngineQueueLive),
 );
 
+const CompanySourceDomain = Layer.mergeAll(CompanyAiServiceLive);
+
 const Domain = Layer.mergeAll(
   UsersRepoLive,
   CompanyCheckDomain,
-  CompanyServiceLive.pipe(Layer.provide(CompanyRepoLive), Layer.provide(CompanyCheckDomain)),
+  CompanyServiceLive.pipe(
+    Layer.provide(CompanyRepoLive),
+    Layer.provide(CompanyCheckDomain),
+    Layer.provide(CompanySourceIngestQueueLive),
+  ),
+  MemoServiceLive,
 );
 
-const Handlers = Layer.mergeAll(HealthLive, CompanyLive, CompanyCheckLive).pipe(
+const Handlers = Layer.mergeAll(HealthLive, CompanyLive, CompanyCheckLive, MemoLive).pipe(
   Layer.provide(AuthLive),
 );
 
@@ -52,6 +66,10 @@ const AppLive = Layer.mergeAll(
   RpcLive.pipe(Layer.provide(Handlers), Layer.provide(RpcSerialization.layerNdjson)),
   HttpRoutes,
   CompanyCheckWorkflowLive,
+  CompanySourceWorkflowLive.pipe(
+    Layer.provide(CompanySourceDomain),
+    Layer.provide(CompanyRepoLive),
+  ),
 ).pipe(Layer.provide(Domain), Layer.provide(Infra), Layer.provide(WorkflowEngineLive));
 
 const PortConfig = Config.int("PORT").pipe(Config.withDefault(38412));
