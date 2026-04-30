@@ -77,17 +77,20 @@ export class CompanyAiService extends Context.Service<
                 message: "URL source is missing url",
               });
             }
-            const response = yield* LanguageModel.generateText({
-              prompt: buildUrlExtractionPrompt({ company: input.company, source: input.source }),
-              toolkit,
-              toolChoice: "required",
+            const acquired = yield* acquireUrlContent(input.source);
+            const response = yield* LanguageModel.generateObject({
+              objectName: "company_source_extraction",
+              schema: CompanyAiSourceExtraction,
+              prompt: buildExtractionPrompt({
+                company: input.company,
+                source: input.source,
+                text: acquired.text,
+                truncatedNote: acquired.textTruncated
+                  ? "\n\nThe source text was truncated to fit the extraction context."
+                  : "",
+              }),
             });
-            const extraction = yield* decodeExtractionResponse(response.text);
-            const acquired = buildWebSearchAcquiredContent({
-              source: input.source,
-              text: response.text,
-            });
-            return { extraction, acquired };
+            return { extraction: response.value, acquired };
           }
 
           if (input.source.kind === "chat") {
@@ -208,24 +211,6 @@ const buildExtractionPrompt = (input: {
     input.text ? `Source text:\n${input.text}` : "",
   ].join("\n");
 
-const buildUrlExtractionPrompt = (input: {
-  readonly company: Company;
-  readonly source: CompanySource;
-}) =>
-  [
-    "You extract venture diligence evidence from a URL source.",
-    "Use web search/tool access to inspect the exact URL before answering.",
-    "Only return facts directly supported by the web-accessible source.",
-    "Do not infer unsupported claims. Prefer concise excerpts, metrics, and claims useful for evaluating team, market, product, traction, financials, and deal risk.",
-    "Return an empty insights array if the source has no useful diligence evidence or cannot be accessed.",
-    'Return only minified JSON matching this shape: {"summary": string|null, "insights": [{"kind": "excerpt"|"metric"|"claim"|"note", "locator": string|null, "text": string, "confidence": number}] }.',
-    `URL: ${input.source.url}`,
-    `Company: ${input.company.name}`,
-    `Stage: ${input.company.stage}`,
-    `Sector: ${input.company.sector ?? "unknown"}`,
-    `Source title: ${input.source.title}`,
-  ].join("\n");
-
 const buildChatExtractionPrompt = (input: {
   readonly company: Company;
   readonly source: CompanySource;
@@ -263,6 +248,63 @@ const buildPdfExtractionPrompt = (input: {
     `Source title: ${input.source.title}`,
     `File name: ${input.source.fileName ?? input.source.title}`,
   ].join("\n");
+
+const acquireUrlContent = Effect.fn("acquireUrlContent")(function* (
+  source: CompanySource,
+): Effect.fn.Return<CompanySourceAcquiredContent, ErrorCompanyAiInvalidResponse> {
+  if (!source.url) {
+    return yield* new ErrorCompanyAiInvalidResponse({ message: "URL source is missing url" });
+  }
+  const url = source.url;
+  const response = yield* Effect.tryPromise({
+    try: () =>
+      fetch(url, {
+        headers: {
+          accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
+          "user-agent": "CapitalSourceIngest/1.0",
+        },
+        redirect: "follow",
+      }),
+    catch: () => new ErrorCompanyAiInvalidResponse({ message: "URL source could not be fetched" }),
+  });
+  if (!response.ok) {
+    return yield* new ErrorCompanyAiInvalidResponse({
+      message: `URL source returned HTTP ${response.status}`,
+    });
+  }
+  const html = yield* Effect.tryPromise({
+    try: () => response.text(),
+    catch: () => new ErrorCompanyAiInvalidResponse({ message: "URL source could not be read" }),
+  });
+  const capped = capSourceText({ text: htmlToText(html) });
+  if (!capped.text.trim()) {
+    return yield* new ErrorCompanyAiInvalidResponse({ message: "URL source had no readable text" });
+  }
+  return {
+    provider: "url_fetch",
+    title: source.title,
+    finalUrl: response.url || url,
+    text: capped.text,
+    textCharCount: capped.charCount,
+    textTruncated: capped.truncated,
+    textHash: capped.hash,
+  };
+});
+
+function htmlToText(html: string): string {
+  return html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 const buildWebSearchAcquiredContent = (input: {
   readonly source: CompanySource;

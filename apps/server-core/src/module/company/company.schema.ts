@@ -157,6 +157,7 @@ export type CompanyUpdateInput = typeof CompanyUpdateInput.Type;
 export const CompanySourceAcquiredContent = Schema.Struct({
   provider: Schema.Union([
     Schema.Literal("openai_web_search"),
+    Schema.Literal("url_fetch"),
     Schema.Literal("openai_file"),
     Schema.Literal("user_note"),
     Schema.Literal("pdf_parser"),
