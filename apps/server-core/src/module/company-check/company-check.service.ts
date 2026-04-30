@@ -115,7 +115,7 @@ export class CompanyCheckService extends Context.Service<CompanyCheckService>()(
             );
             return check ? { check, judgement } : null;
           });
-          for (const link of results.flatMap((result) =>
+          const links = results.flatMap((result) =>
             result
               ? result.judgement.insightIds.map(
                   (insightId): CompanyCheckInsight => ({
@@ -129,12 +129,13 @@ export class CompanyCheckService extends Context.Service<CompanyCheckService>()(
                   }),
                 )
               : [],
-          )) {
+          );
+          yield* checkRepo.deleteCheckInsights(companyId);
+          for (const link of links) {
             yield* checkRepo.upsertCheckInsight(link);
           }
           const overrides = yield* checkRepo.listCheckOverrides(companyId);
-          const checkInsights = yield* checkRepo.listCheckInsights(companyId);
-          const effectiveChecks = applyOverrides({ engineChecks, overrides, links: checkInsights });
+          const effectiveChecks = applyOverrides({ engineChecks, overrides, links });
           const score = calculateWeightedScore({ checks: effectiveChecks });
           yield* companyRepo.upsert({
             ...company,
@@ -177,7 +178,7 @@ export class CompanyCheckService extends Context.Service<CompanyCheckService>()(
         for (const check of checks) {
           yield* checkRepo.upsertEngineCheck(check);
         }
-        for (const link of results.flatMap(({ check, judgement }) =>
+        const links = results.flatMap(({ check, judgement }) =>
           judgement.insightIds.map(
             (insightId): CompanyCheckInsight => ({
               id: `${check.id}:${insightId}`,
@@ -189,12 +190,14 @@ export class CompanyCheckService extends Context.Service<CompanyCheckService>()(
               updatedAt: now,
             }),
           ),
-        )) {
+        );
+        yield* checkRepo.deleteCheckInsights(companyId);
+        for (const link of links) {
           yield* checkRepo.upsertCheckInsight(link);
         }
 
         const overrides = yield* checkRepo.listCheckOverrides(companyId);
-        const effectiveChecks = applyOverrides({ engineChecks: checks, overrides, links: [] });
+        const effectiveChecks = applyOverrides({ engineChecks: checks, overrides, links });
         const score = calculateWeightedScore({ checks: effectiveChecks });
         yield* companyRepo.upsert({
           ...company,

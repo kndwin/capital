@@ -602,7 +602,7 @@ function WatchTargetsPanel({
       )}
       <form
         data-slot="company-detail-watch-target-create"
-        className="grid gap-2"
+        className="grid gap-3"
         onSubmit={(event) => {
           event.preventDefault();
           if (canSubmit) onSubmit();
@@ -634,6 +634,9 @@ function WatchTargetsPanel({
           placeholder="Optional label, e.g. Changelog"
           disabled={isSubmitting}
         />
+        <Button type="submit" size="sm" variant="secondary" disabled={!canSubmit}>
+          {isSubmitting ? "Adding target..." : "Add watch target"}
+        </Button>
         <Input
           value={draft.locator}
           onChange={(event) => onChange({ ...draft, locator: event.currentTarget.value })}
@@ -641,9 +644,6 @@ function WatchTargetsPanel({
           disabled={isSubmitting}
         />
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" size="sm" variant="secondary" disabled={!canSubmit}>
-          {isSubmitting ? "Adding target..." : "Add watch target"}
-        </Button>
       </form>
     </section>
   );

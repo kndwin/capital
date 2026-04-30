@@ -250,6 +250,13 @@ export class CompanyCheckRepo extends Context.Service<CompanyCheckRepo>()(
           );
           return input;
         }),
+        deleteCheckInsights: Effect.fn("CompanyCheckRepo.deleteCheckInsights")(function* (
+          companyId: string,
+        ) {
+          yield* db.query((d) =>
+            d.delete(companyCheckInsight).where(eq(companyCheckInsight.companyId, companyId)),
+          );
+        }),
         listSeedChecks: Effect.fn("CompanyCheckRepo.listSeedChecks")(function* (companyId: string) {
           const rows = yield* db.query((d) =>
             d

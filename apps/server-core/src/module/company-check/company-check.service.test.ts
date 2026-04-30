@@ -124,7 +124,22 @@ const CompanyCheckRepoTestLive = Layer.effect(
     const runs = yield* Ref.make(new Map<string, CompanyCheckRun>());
     const engineChecks = yield* Ref.make(new Map<string, CompanyEngineCheck>());
     const overrides = yield* Ref.make(new Map<string, CompanyCheckOverride>());
-    const links = yield* Ref.make(new Map<string, CompanyCheckInsight>());
+    const links = yield* Ref.make(
+      new Map<string, CompanyCheckInsight>([
+        [
+          "sample-company:traction.arr:stale-insight",
+          {
+            id: "sample-company:traction.arr:stale-insight",
+            companyId: sample.id,
+            checkDefinitionId: "traction.arr",
+            insightId: "stale-insight",
+            runId: "stale-run",
+            relationship: "supports",
+            updatedAt: sample.updatedAt - 1,
+          },
+        ],
+      ]),
+    );
     return CompanyCheckRepo.of({
       upsertCheck: Effect.fn("CompanyCheckRepoTest.upsertCheck")(function* (input) {
         yield* Ref.update(checks, (items) => new Map(items).set(input.id, input));
@@ -146,6 +161,17 @@ const CompanyCheckRepoTestLive = Layer.effect(
         yield* Ref.update(links, (items) => new Map(items).set(input.id, input));
         return input;
       }),
+      deleteCheckInsights: Effect.fn("CompanyCheckRepoTest.deleteCheckInsights")(
+        function* (companyId) {
+          yield* Ref.update(links, (items) => {
+            const next = new Map(items);
+            for (const [id, link] of next) {
+              if (link.companyId === companyId) next.delete(id);
+            }
+            return next;
+          });
+        },
+      ),
       listSeedChecks: Effect.fn("CompanyCheckRepoTest.listSeedChecks")(function* (companyId) {
         return Array.from((yield* Ref.get(checks)).values()).filter(
           (check) => check.companyId === companyId,
@@ -231,6 +257,41 @@ describe("CompanyCheckService", () => {
       assert.strictEqual(company?.riskLevel, "medium");
       assert.strictEqual(groups.find((group) => group.id === "market")?.score, 60);
       assert.strictEqual(groups.find((group) => group.id === "traction")?.score, 100);
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("returns supporting insight links immediately after a fresh engine run", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyCheckService;
+
+      yield* service.runCheckEngine(sample.id, "test");
+      const groups = yield* service.getGroups(sample.id);
+      const tractionChecks = groups.find((group) => group.id === "traction")?.checks ?? [];
+
+      assert.deepStrictEqual(
+        tractionChecks.find((check) => check.checkDefinitionId === "traction.arr")
+          ?.supportingInsightIds,
+        ["deck-growth"],
+      );
+      assert.deepStrictEqual(
+        tractionChecks.find((check) => check.checkDefinitionId === "traction.growth_rate")
+          ?.supportingInsightIds,
+        ["deck-growth", "deck-market"],
+      );
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("removes stale supporting insight links when replacing check evidence", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyCheckService;
+
+      yield* service.runCheckEngine(sample.id, "test");
+      const groups = yield* service.getGroups(sample.id);
+      const arrCheck = groups
+        .find((group) => group.id === "traction")
+        ?.checks.find((check) => check.checkDefinitionId === "traction.arr");
+
+      assert.deepStrictEqual(arrCheck?.supportingInsightIds, ["deck-growth"]);
     }).pipe(Effect.provide(TestLive)),
   );
 });
