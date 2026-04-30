@@ -1,0 +1,104 @@
+pitch-deck/CHEATSHEET.md
+  241ae059699cb80b 1-353
+pitch-deck/assets/demos/demo-kaku.html
+  241ae059699cb80b 1-795
+pitch-deck/scripts/package-skill.sh
+  241ae059699cb80b 1-36
+pitch-deck/scripts/shared.py
+  241ae059699cb80b 1-25
+pitch-deck/scripts/stabilize.py
+  241ae059699cb80b 1-790
+pitch-deck/scripts/build.py
+  241ae059699cb80b 1-853
+.oxlintrc.json
+  241ae059699cb80b 44-45
+pitch-deck/capital-pitch-deck.py
+  1b825901b709e572 1-128
+pitch-deck/vercel.json
+  241ae059699cb80b 1-9
+pitch-deck/assets/templates/slides.py
+  241ae059699cb80b 1-418
+.prettierignore
+  241ae059699cb80b 1
+pitch-deck/assets/images/logo.svg
+  241ae059699cb80b 1
+pitch-deck/SKILL.md
+  241ae059699cb80b 27-399
+pitch-deck/CLAUDE.md
+  241ae059699cb80b 1-118
+pitch-deck/references/stabilizer_profiles.json
+  241ae059699cb80b 1-165
+apps/server-core/src/module/company-ai/company-ai.service.ts
+  aaf7075957861020 80-91,93,252-307
+apps/server-core/src/module/company/company.schema.ts
+  aaf7075957861020 160
+pitch-deck/README.md
+  241ae059699cb80b 86-94
+pitch-deck/LICENSE
+  241ae059699cb80b 1-21
+pitch-deck/.gitignore
+  241ae059699cb80b 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "3dc3b91053008ec1242980513f77ce416a978ea3",
+  "prompts": {
+    "1b825901b709e572": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b47a693-d4a6-479f-8fc1-155ac49d9f2b",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 285,
+      "total_deletions": 157,
+      "accepted_lines": 128,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/bcee2d676baafe8f6dfc2a0dd3176ae8c78d335d5ddff758a74c58198fc26188"
+    },
+    "241ae059699cb80b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ad11b095-ecec-4b50-ae98-f73f0074fb31",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 34023,
+      "total_deletions": 377,
+      "accepted_lines": 34023,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/1d47a13db797a1079b33adba15ec0d91820f149ca78dc84677d2390984d65d69"
+    },
+    "99c240ab63e20a3e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_2245f6582ffe7IsqXmH0gtxPoz",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 232,
+      "total_deletions": 0,
+      "accepted_lines": 116,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/78a19ae9a8daa9032095b918672aa484c5552eb9aa04f5c2e07beaa12b135a20"
+    },
+    "aaf7075957861020": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_22453478bffetnkqpJszWRHVLW",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Kevin",
+      "messages": [],
+      "total_additions": 73,
+      "total_deletions": 30,
+      "accepted_lines": 71,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/efe250c2915c8319f5dd6c45e44bc7338268b7bd6cace912e8ddfb3702c71cd3"
+    }
+  }
+}
