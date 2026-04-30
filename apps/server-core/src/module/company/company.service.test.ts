@@ -5,7 +5,12 @@ import { CompanySourceIngestQueue } from "./company-source.queue";
 import { ErrorCompanyNotFound } from "./company.error";
 import { CompanyRepo } from "./company.repo";
 import { CompanyService, CompanyServiceLive } from "./company.service";
-import type { Company, CompanySource, CompanySourceInsight } from "./company.schema";
+import type {
+  Company,
+  CompanySource,
+  CompanySourceInsight,
+  CompanyWatchTarget,
+} from "./company.schema";
 
 const sample: Company = {
   id: "sample-company",
@@ -38,6 +43,19 @@ const TestRepoLive = Layer.effect(
     const store = yield* Ref.make(new Map<string, Company>());
     const sources = yield* Ref.make(new Map<string, CompanySource>());
     const insights = yield* Ref.make(new Map<string, CompanySourceInsight>());
+    const watchTargets = yield* Ref.make(new Map<string, CompanyWatchTarget>());
+    const invites = yield* Ref.make(
+      new Map<
+        string,
+        {
+          readonly id: string;
+          readonly tokenHash: string;
+          readonly status: "open" | "used";
+          readonly expiresAt: number;
+          readonly submittedCompanyId: string | null;
+        }
+      >(),
+    );
     return CompanyRepo.of({
       upsert: Effect.fn("CompanyRepoTest.upsert")(function* (input: Company) {
         yield* Ref.update(store, (companies) => new Map(companies).set(input.id, input));
@@ -70,6 +88,39 @@ const TestRepoLive = Layer.effect(
       list: Effect.fn("CompanyRepoTest.list")(function* () {
         return Array.from((yield* Ref.get(store)).values());
       }),
+      getApplicationInviteByTokenHash: Effect.fn("CompanyRepoTest.getApplicationInviteByTokenHash")(
+        function* (tokenHash: string) {
+          return Array.from((yield* Ref.get(invites)).values()).find(
+            (invite) => invite.tokenHash === tokenHash,
+          );
+        },
+      ),
+      createApplicationInvite: Effect.fn("CompanyRepoTest.createApplicationInvite")(
+        function* (input) {
+          yield* Ref.update(invites, (items) =>
+            new Map(items).set(input.id, {
+              id: input.id,
+              tokenHash: input.tokenHash,
+              status: "open",
+              expiresAt: input.expiresAt,
+              submittedCompanyId: null,
+            }),
+          );
+        },
+      ),
+      markApplicationInviteUsed: Effect.fn("CompanyRepoTest.markApplicationInviteUsed")(
+        function* (input) {
+          yield* Ref.update(invites, (items) => {
+            const invite = items.get(input.id);
+            if (!invite) return items;
+            return new Map(items).set(input.id, {
+              ...invite,
+              status: "used",
+              submittedCompanyId: input.companyId,
+            });
+          });
+        },
+      ),
       upsertSource: Effect.fn("CompanyRepoTest.upsertSource")(function* (input: CompanySource) {
         yield* Ref.update(sources, (items) => new Map(items).set(input.id, input));
         return input;
@@ -81,6 +132,33 @@ const TestRepoLive = Layer.effect(
       updateSourceStatus: () => Effect.void,
       updateSourceAcquiredContent: () => Effect.void,
       nextSourceOrder: () => Effect.succeed(10),
+      createWatchTarget: Effect.fn("CompanyRepoTest.createWatchTarget")(function* (
+        input: CompanyWatchTarget,
+      ) {
+        yield* Ref.update(watchTargets, (items) => new Map(items).set(input.id, input));
+        return input;
+      }),
+      updateWatchTargetScan: Effect.fn("CompanyRepoTest.updateWatchTargetScan")(function* (input) {
+        yield* Ref.update(watchTargets, (items) => {
+          const existing = items.get(input.id);
+          if (!existing) return items;
+          return new Map(items).set(input.id, {
+            ...existing,
+            status: input.status,
+            lastScannedAt: input.lastScannedAt,
+            lastMatchedAt: input.lastMatchedAt,
+            error: input.error,
+            updatedAt: input.lastScannedAt,
+          });
+        });
+      }),
+      listWatchTargets: Effect.fn("CompanyRepoTest.listWatchTargets")(function* (
+        companyId: string,
+      ) {
+        return Array.from((yield* Ref.get(watchTargets)).values()).filter(
+          (target) => target.companyId === companyId,
+        );
+      }),
       upsertSourceInsight: Effect.fn("CompanyRepoTest.upsertSourceInsight")(function* (
         input: CompanySourceInsight,
       ) {
@@ -160,60 +238,125 @@ const TestLive = CompanyServiceLive.pipe(
 );
 
 describe("CompanyService", () => {
-  it.effect("creates sparse companies from a name", () =>
-    Effect.gen(function* () {
-      const service = yield* CompanyService;
-
-      const company = yield* service.create({
-        name: "Bevel",
-        description: null,
-        website: null,
-        source: null,
-      });
-
-      assert.strictEqual(company.name, "Bevel");
-      assert.strictEqual(company.stage, "unknown");
-      assert.strictEqual(company.score, null);
-    }).pipe(Effect.provide(TestLive)),
-  );
-
-  it.effect("creates companies with website and description", () =>
-    Effect.gen(function* () {
-      const service = yield* CompanyService;
-
-      const company = yield* service.create({
-        name: "Bevel",
-        description: "AI diligence workspace.",
-        website: "https://bevel.example",
-        source: null,
-      });
-
-      assert.strictEqual(company.description, "AI diligence workspace.");
-      assert.strictEqual(company.website, "https://bevel.example");
-    }).pipe(Effect.provide(TestLive)),
-  );
-
-  it.effect("creates an initial source with the company", () =>
+  it.effect("creates companies from a name and url with initial sourcing", () =>
     Effect.gen(function* () {
       const service = yield* CompanyService;
       sourceEnqueued.splice(0, sourceEnqueued.length);
 
       const company = yield* service.create({
         name: "Bevel",
-        description: null,
-        website: "https://bevel.example",
-        source: {
-          kind: "url",
-          url: "https://bevel.example/deck",
-          title: "Deck",
-        },
+        url: "https://bevel.example",
       });
       const detail = yield* service.getDetail(company.id);
 
-      assert.strictEqual(detail.sources.length, 1);
-      assert.strictEqual(detail.sources[0]?.title, "Deck");
-      assert.strictEqual(sourceEnqueued.length, 1);
-      assert.strictEqual(sourceEnqueued[0]?.companyId, company.id);
+      assert.strictEqual(company.name, "Bevel");
+      assert.strictEqual(company.website, "https://bevel.example");
+      assert.strictEqual(company.stage, "unknown");
+      assert.strictEqual(company.score, null);
+      assert.strictEqual(detail.sources.length, 3);
+      assert.deepStrictEqual(
+        detail.sources.map((source) => source.title),
+        ["Company website", "Market research", "Founder research"],
+      );
+      assert.strictEqual(sourceEnqueued.length, 3);
+      assert.ok(sourceEnqueued.every((item) => item.companyId === company.id));
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("creates stealth companies from a blank name", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+      sourceEnqueued.splice(0, sourceEnqueued.length);
+
+      const company = yield* service.create({
+        name: "",
+        url: "https://stealth.example",
+      });
+      const detail = yield* service.getDetail(company.id);
+
+      assert.strictEqual(company.name, "Stealth company");
+      assert.strictEqual(company.website, "https://stealth.example");
+      assert.strictEqual(detail.sources.length, 3);
+      assert.strictEqual(sourceEnqueued.length, 3);
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("creates watched websites for a company detail", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+      yield* service.upsert(sample);
+
+      const target = yield* service.createWatchTarget({
+        companyId: sample.id,
+        kind: "web_page",
+        title: "Changelog",
+        locator: "https://sample.example/changelog",
+      });
+      const detail = yield* service.getDetail(sample.id);
+
+      assert.strictEqual(target.status, "active");
+      assert.strictEqual(target.kind, "web_page");
+      assert.strictEqual(target.locator, "https://sample.example/changelog");
+      assert.strictEqual(target.title, "Changelog");
+      assert.strictEqual(target.lastScannedAt, null);
+      assert.deepStrictEqual(
+        detail.watchTargets.map((item) => item.target.url),
+        ["https://sample.example/changelog"],
+      );
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("normalizes watched X profiles", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+      yield* service.upsert(sample);
+
+      const target = yield* service.createWatchTarget({
+        companyId: sample.id,
+        kind: "x_profile",
+        title: "Company X",
+        locator: "https://x.com/sampleco/status/123",
+      });
+
+      assert.strictEqual(target.kind, "x_profile");
+      assert.strictEqual(target.locator, "sampleco");
+      assert.strictEqual(target.url, "https://x.com/sampleco");
+    }).pipe(Effect.provide(TestLive)),
+  );
+
+  it.effect("submits applications with initial sourcing and application sources", () =>
+    Effect.gen(function* () {
+      const service = yield* CompanyService;
+      sourceEnqueued.splice(0, sourceEnqueued.length);
+      const createdInvite = yield* service.createApplicationInvite({ expiresInDays: 14 });
+      const result = yield* service.submitApplication({
+        token: createdInvite.token,
+        name: "Submitted Co",
+        website: "https://submitted.example",
+        description: "Founder-submitted company.",
+        product: "Workflow automation for operators.",
+        customer: "Mid-market finance teams.",
+        traction: "$100k ARR and 12 customers.",
+        fundraise: "Raising seed.",
+        notes: "Reference calls available.",
+        links: [{ title: "Deck", url: "https://submitted.example/deck" }],
+        files: [{ fileName: "deck.pdf", contentBase64: Buffer.from("pdf").toString("base64") }],
+      });
+      const detail = yield* service.getDetail(result.companyId);
+
+      assert.strictEqual(detail.company.name, "Submitted Co");
+      assert.deepStrictEqual(
+        detail.sources.map((source) => source.title),
+        [
+          "Company website",
+          "Market research",
+          "Founder research",
+          "Founder application",
+          "Deck",
+          "deck.pdf",
+        ],
+      );
+      assert.strictEqual(sourceEnqueued.length, 6);
     }).pipe(Effect.provide(TestLive)),
   );
 

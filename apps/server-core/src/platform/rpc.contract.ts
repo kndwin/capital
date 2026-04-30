@@ -9,7 +9,10 @@ export * from "../module/company-check/company-check.rpc.contract";
 export * from "../module/company-check/company-check.schema";
 export * from "../module/company/company.rpc.contract";
 export * from "../module/company/company.schema";
-export { ErrorCompanyNotFound } from "../module/company/company.error";
+export {
+  ErrorCompanyApplicationInviteInvalid,
+  ErrorCompanyNotFound,
+} from "../module/company/company.error";
 export * from "../module/health/health.rpc.contract";
 export * from "../module/memo/memo.rpc.contract";
 export * from "../module/memo/memo.schema";

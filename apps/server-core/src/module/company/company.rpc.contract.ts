@@ -3,12 +3,16 @@ import { Rpc, RpcGroup } from "effect/unstable/rpc";
 import { ErrorCompanyNotFound } from "./company.error";
 import {
   Company,
+  CompanyApplicationInviteCreateInput,
+  CompanyApplicationInviteCreateResult,
   CompanyCreateInput,
   CompanyDetail,
   CompanySource,
   CompanySourceCreateInput,
   CompanySourceRetryInput,
   CompanyUpdateInput,
+  CompanyWatchTarget,
+  CompanyWatchTargetCreateInput,
 } from "./company.schema";
 
 export class CompanyCreate extends Rpc.make("CompanyCreate", {
@@ -57,6 +61,17 @@ export class CompanySourceRetry extends Rpc.make("CompanySourceRetry", {
   error: ErrorCompanyNotFound,
 }) {}
 
+export class CompanyWatchTargetCreate extends Rpc.make("CompanyWatchTargetCreate", {
+  payload: CompanyWatchTargetCreateInput,
+  success: CompanyWatchTarget,
+  error: ErrorCompanyNotFound,
+}) {}
+
+export class CompanyApplicationInviteCreate extends Rpc.make("CompanyApplicationInviteCreate", {
+  payload: CompanyApplicationInviteCreateInput,
+  success: CompanyApplicationInviteCreateResult,
+}) {}
+
 export const CompanyRpcs = RpcGroup.make(
   CompanyCreate,
   CompanyList,
@@ -66,4 +81,6 @@ export const CompanyRpcs = RpcGroup.make(
   CompanyDetailGet,
   CompanySourceCreate,
   CompanySourceRetry,
+  CompanyWatchTargetCreate,
+  CompanyApplicationInviteCreate,
 );

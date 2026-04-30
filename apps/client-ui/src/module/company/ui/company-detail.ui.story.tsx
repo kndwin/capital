@@ -3,7 +3,17 @@ import type { CompanyCheck, CompanyDetail as CompanyDetailData } from "@capital/
 import { CompanyDetail, CompanyDetailError, CompanyDetailLoading } from "./company-detail.ui";
 
 const checks: ReadonlyArray<CompanyCheck> = [
-  check("team-founder-prestige", "team", "Team", "Founder prestige", "pass", "ex-Stripe", 10),
+  check(
+    "team-founder-prestige",
+    "team",
+    "Team",
+    "Founder prestige",
+    "pass",
+    "ex-Stripe",
+    10,
+    "seed",
+    ["founder-background-excerpt"],
+  ),
   check(
     "team-technical-cofounder",
     "team",
@@ -12,13 +22,41 @@ const checks: ReadonlyArray<CompanyCheck> = [
     "pass",
     "CTO · 12y",
     20,
+    "seed",
+    ["founder-background-excerpt"],
   ),
-  check("team-completeness", "team", "Team", "Team completeness", "concern", "no GTM lead", 30),
+  check(
+    "team-completeness",
+    "team",
+    "Team",
+    "Team completeness",
+    "concern",
+    "no GTM lead",
+    30,
+    "seed",
+    ["team-gap-note"],
+  ),
   check("team-churn", "team", "Team", "Employee churn", "unknown", null, 40),
-  check("market-tam", "market", "Market", "TAM credibility", "pass", "$8B", 50),
-  check("market-growth", "market", "Market", "Growth rate", "pass", "17% CAGR", 60),
-  check("market-competition", "market", "Market", "Competition", "fail", "2 incumbents", 70),
-  check("traction-arr", "traction", "Traction", "ARR", "pass", "$1.2M", 80, "override"),
+  check("market-tam", "market", "Market", "TAM credibility", "pass", "$8B", 50, "seed", [
+    "market-size-excerpt",
+  ]),
+  check("market-growth", "market", "Market", "Growth rate", "pass", "17% CAGR", 60, "seed", [
+    "market-size-excerpt",
+  ]),
+  check(
+    "market-competition",
+    "market",
+    "Market",
+    "Competition",
+    "fail",
+    "2 incumbents",
+    70,
+    "seed",
+    ["competition-excerpt"],
+  ),
+  check("traction-arr", "traction", "Traction", "ARR", "pass", "$1.2M", 80, "override", [
+    "pitch-deck-v3-growth-excerpt",
+  ]),
   check(
     "traction-growth",
     "traction",
@@ -28,6 +66,7 @@ const checks: ReadonlyArray<CompanyCheck> = [
     "22% MoM",
     90,
     "engine",
+    ["pitch-deck-v3-growth-excerpt", "q3-financials-growth-excerpt"],
   ),
 ];
 
@@ -55,7 +94,91 @@ const detail: CompanyDetailData = {
     source("crunchbase-acme", "url", "crunchbase.com/acme", "fetched yest.", 76, false, 30),
     source("acme-robotics-com", "url", "acme-robotics.com", "homepage", 70, false, 40),
   ],
+  watchTargets: [
+    {
+      target: {
+        id: "acme-robotics:watch:changelog",
+        companyId: "acme-robotics",
+        kind: "web_page",
+        locator: "https://acme-robotics.com/changelog",
+        title: "Changelog",
+        url: "https://acme-robotics.com/changelog",
+        status: "active",
+        lastScannedAt: 1_777_680_000_000,
+        lastMatchedAt: 1_777_680_000_000,
+        error: null,
+        updatedAt: 1_777_680_000_000,
+      },
+      recentScans: [],
+      recentSources: [],
+    },
+    {
+      target: {
+        id: "acme-robotics:watch:press",
+        companyId: "acme-robotics",
+        kind: "x_profile",
+        locator: "acmerobotics",
+        title: "Press",
+        url: "https://x.com/acmerobotics",
+        status: "active",
+        lastScannedAt: null,
+        lastMatchedAt: null,
+        error: null,
+        updatedAt: 1_777_680_000_000,
+      },
+      recentScans: [],
+      recentSources: [],
+    },
+  ],
   insights: [
+    {
+      id: "founder-background-excerpt",
+      companyId: "acme-robotics",
+      sourceId: "crunchbase-acme",
+      kind: "excerpt",
+      locator: "Team section",
+      text: "The founding team includes a former Stripe platform lead and a robotics CTO with 12 years of autonomy experience.",
+      extractorVersion: "insight-workflow-seed-v1",
+      insightWorkflowRunId: "seed-acme-crunchbase",
+      order: 30,
+      updatedAt: 1_777_680_000_000,
+    },
+    {
+      id: "team-gap-note",
+      companyId: "acme-robotics",
+      sourceId: "acme-robotics-com",
+      kind: "excerpt",
+      locator: "Careers",
+      text: "The company is actively hiring its first go-to-market lead while founders continue to run sales directly.",
+      extractorVersion: "insight-workflow-seed-v1",
+      insightWorkflowRunId: "seed-acme-website",
+      order: 40,
+      updatedAt: 1_777_680_000_000,
+    },
+    {
+      id: "market-size-excerpt",
+      companyId: "acme-robotics",
+      sourceId: "pitch-deck-v3",
+      kind: "excerpt",
+      locator: "P5",
+      text: "Management sizes the mid-market 3PL automation opportunity at $8B, expanding at 17% annually as labor constraints persist.",
+      extractorVersion: "insight-workflow-seed-v1",
+      insightWorkflowRunId: "seed-acme-pitch-deck-v3",
+      order: 50,
+      updatedAt: 1_777_680_000_000,
+    },
+    {
+      id: "competition-excerpt",
+      companyId: "acme-robotics",
+      sourceId: "crunchbase-acme",
+      kind: "excerpt",
+      locator: "Competitive landscape",
+      text: "Two well-capitalized incumbents already sell warehouse robotics suites into larger 3PL operators.",
+      extractorVersion: "insight-workflow-seed-v1",
+      insightWorkflowRunId: "seed-acme-crunchbase",
+      order: 60,
+      updatedAt: 1_777_680_000_000,
+    },
     {
       id: "pitch-deck-v3-growth-excerpt",
       companyId: "acme-robotics",
@@ -163,6 +286,12 @@ const meta: Meta<typeof CompanyDetail> = {
     onRightPanelChange: () => {},
     memoPanel: <div className="p-5 text-sm text-muted-foreground">Memo preview placeholder</div>,
     onCompanyDelete: () => {},
+    sourceDraft: { kind: "url", title: "", url: "", text: "", prompt: "", file: null },
+    watchTargetDraft: { kind: "web_page", title: "", locator: "" },
+    onSourceDraftChange: () => {},
+    onSourceSubmit: () => {},
+    onWatchTargetDraftChange: () => {},
+    onWatchTargetSubmit: () => {},
   },
   decorators: [
     (Story) => (
@@ -213,6 +342,11 @@ export const Memo: Story = {
     memoPanel: <div className="p-5 text-sm text-muted-foreground">Memo preview placeholder</div>,
   },
 };
+export const Watch: Story = {
+  args: {
+    rightPanel: "watch",
+  },
+};
 export const History: Story = {
   args: {
     leftPanel: "history",
@@ -224,6 +358,7 @@ export const Sparse: Story = {
       ...detail,
       checkGroups: [],
       sources: [],
+      watchTargets: [],
       insights: [],
       history: [],
     },
@@ -292,6 +427,7 @@ function check(
   detailText: string | null,
   order: number,
   source: CompanyCheck["source"] = "seed",
+  supportingInsightIds: ReadonlyArray<string> = [],
 ): CompanyCheck {
   return {
     id,
@@ -312,7 +448,7 @@ function check(
         : "Generated from source insights.",
     source,
     overrideId: source === "override" ? "acme-traction-arr-kevin-override" : null,
-    supportingInsightIds: ["pitch-deck-v3-growth-excerpt"],
+    supportingInsightIds,
     order,
     updatedAt: 1_777_680_000_000,
   };

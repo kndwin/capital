@@ -8,13 +8,21 @@ import {
   companyEngineCheck,
 } from "../company-check/company-check.table";
 import { Db } from "../../platform/db.contract";
-import { company, companySource, companySourceInsight } from "./company.table";
+import {
+  company,
+  companyApplicationInvite,
+  companySource,
+  companySourceInsight,
+  companyWatchTarget,
+} from "./company.table";
 import type {
   Company,
   CompanySource,
   CompanySourceAcquiredContent,
   CompanySourceInsight,
   CompanySourceStatus,
+  CompanyWatchTarget,
+  CompanyWatchTargetStatus,
 } from "./company.schema";
 
 const selection = {
@@ -31,8 +39,10 @@ const selection = {
 } as const;
 
 type CompanyRow = typeof company.$inferSelect;
+type CompanyApplicationInviteRow = typeof companyApplicationInvite.$inferSelect;
 type CompanySourceRow = typeof companySource.$inferSelect;
 type CompanySourceInsightRow = typeof companySourceInsight.$inferSelect;
+type CompanyWatchTargetRow = typeof companyWatchTarget.$inferSelect;
 
 const toCompany = (row: CompanyRow): Company => ({
   id: row.id,
@@ -45,6 +55,14 @@ const toCompany = (row: CompanyRow): Company => ({
   score: row.score,
   riskLevel: row.riskLevel as Company["riskLevel"],
   updatedAt: row.updatedAt.getTime(),
+});
+
+const toCompanyApplicationInvite = (row: CompanyApplicationInviteRow) => ({
+  id: row.id,
+  tokenHash: row.tokenHash,
+  status: row.status as "open" | "used",
+  expiresAt: row.expiresAt.getTime(),
+  submittedCompanyId: row.submittedCompanyId,
 });
 
 const toCompanySource = (row: CompanySourceRow): CompanySource => ({
@@ -79,6 +97,20 @@ const toCompanySourceInsight = (row: CompanySourceInsightRow): CompanySourceInsi
   extractorVersion: row.extractorVersion,
   insightWorkflowRunId: row.insightWorkflowRunId,
   order: row.order,
+  updatedAt: row.updatedAt.getTime(),
+});
+
+const toCompanyWatchTarget = (row: CompanyWatchTargetRow): CompanyWatchTarget => ({
+  id: row.id,
+  companyId: row.companyId,
+  kind: row.kind as CompanyWatchTarget["kind"],
+  locator: row.locator,
+  url: row.url,
+  title: row.title,
+  status: row.status as CompanyWatchTarget["status"],
+  lastScannedAt: row.lastScannedAt?.getTime() ?? null,
+  lastMatchedAt: row.lastMatchedAt?.getTime() ?? null,
+  error: row.error,
   updatedAt: row.updatedAt.getTime(),
 });
 
@@ -143,6 +175,9 @@ export class CompanyRepo extends Context.Service<CompanyRepo>()("module/CompanyR
           d.delete(companySourceInsight).where(eq(companySourceInsight.companyId, id)),
         );
         yield* db.query((d) => d.delete(companySource).where(eq(companySource.companyId, id)));
+        yield* db.query((d) =>
+          d.delete(companyWatchTarget).where(eq(companyWatchTarget.companyId, id)),
+        );
         yield* db.query((d) => d.delete(company).where(eq(company.id, id)));
       }),
       list: Effect.fn("CompanyRepo.list")(function* () {
@@ -151,6 +186,48 @@ export class CompanyRepo extends Context.Service<CompanyRepo>()("module/CompanyR
         );
         return rows.map((row) => toCompany(row as CompanyRow));
       }),
+      getApplicationInviteByTokenHash: Effect.fn("CompanyRepo.getApplicationInviteByTokenHash")(
+        function* (tokenHash: string) {
+          const rows = yield* db.query((d) =>
+            d
+              .select()
+              .from(companyApplicationInvite)
+              .where(eq(companyApplicationInvite.tokenHash, tokenHash))
+              .limit(1),
+          );
+          return rows[0]
+            ? toCompanyApplicationInvite(rows[0] as CompanyApplicationInviteRow)
+            : undefined;
+        },
+      ),
+      createApplicationInvite: Effect.fn("CompanyRepo.createApplicationInvite")(function* (input: {
+        readonly id: string;
+        readonly tokenHash: string;
+        readonly expiresAt: number;
+      }) {
+        yield* db.query((d) =>
+          d.insert(companyApplicationInvite).values({
+            id: input.id,
+            tokenHash: input.tokenHash,
+            status: "open",
+            expiresAt: sql`to_timestamp(${input.expiresAt} / 1000.0)`,
+          }),
+        );
+      }),
+      markApplicationInviteUsed: Effect.fn("CompanyRepo.markApplicationInviteUsed")(
+        function* (input: { readonly id: string; readonly companyId: string }) {
+          yield* db.query((d) =>
+            d
+              .update(companyApplicationInvite)
+              .set({
+                status: "used",
+                submittedCompanyId: input.companyId,
+                updatedAt: sql`now()`,
+              })
+              .where(eq(companyApplicationInvite.id, input.id)),
+          );
+        },
+      ),
       upsertSource: Effect.fn("CompanyRepo.upsertSource")(function* (input: CompanySource) {
         yield* db.query((d) =>
           d
@@ -262,6 +339,82 @@ export class CompanyRepo extends Context.Service<CompanyRepo>()("module/CompanyR
             .limit(1),
         );
         return (rows[0]?.order ?? 0) + 10;
+      }),
+      createWatchTarget: Effect.fn("CompanyRepo.createWatchTarget")(function* (
+        input: CompanyWatchTarget,
+      ) {
+        yield* db.query((d) =>
+          d
+            .insert(companyWatchTarget)
+            .values({
+              id: input.id,
+              companyId: input.companyId,
+              kind: input.kind,
+              locator: input.locator,
+              url: input.url,
+              title: input.title,
+              status: input.status,
+              lastScannedAt: input.lastScannedAt
+                ? sql`to_timestamp(${input.lastScannedAt} / 1000.0)`
+                : null,
+              lastMatchedAt: input.lastMatchedAt
+                ? sql`to_timestamp(${input.lastMatchedAt} / 1000.0)`
+                : null,
+              error: input.error,
+            })
+            .onConflictDoUpdate({
+              target: companyWatchTarget.id,
+              set: {
+                companyId: input.companyId,
+                kind: input.kind,
+                locator: input.locator,
+                url: input.url,
+                title: input.title,
+                status: input.status,
+                lastScannedAt: input.lastScannedAt
+                  ? sql`to_timestamp(${input.lastScannedAt} / 1000.0)`
+                  : null,
+                lastMatchedAt: input.lastMatchedAt
+                  ? sql`to_timestamp(${input.lastMatchedAt} / 1000.0)`
+                  : null,
+                error: input.error,
+                updatedAt: sql`now()`,
+              },
+            }),
+        );
+        return input;
+      }),
+      updateWatchTargetScan: Effect.fn("CompanyRepo.updateWatchTargetScan")(function* (input: {
+        readonly id: string;
+        readonly status: CompanyWatchTargetStatus;
+        readonly lastScannedAt: number;
+        readonly lastMatchedAt: number | null;
+        readonly error: string | null;
+      }) {
+        yield* db.query((d) =>
+          d
+            .update(companyWatchTarget)
+            .set({
+              status: input.status,
+              lastScannedAt: sql`to_timestamp(${input.lastScannedAt} / 1000.0)`,
+              lastMatchedAt: input.lastMatchedAt
+                ? sql`to_timestamp(${input.lastMatchedAt} / 1000.0)`
+                : null,
+              error: input.error,
+              updatedAt: sql`now()`,
+            })
+            .where(eq(companyWatchTarget.id, input.id)),
+        );
+      }),
+      listWatchTargets: Effect.fn("CompanyRepo.listWatchTargets")(function* (companyId: string) {
+        const rows = yield* db.query((d) =>
+          d
+            .select()
+            .from(companyWatchTarget)
+            .where(eq(companyWatchTarget.companyId, companyId))
+            .orderBy(asc(companyWatchTarget.createdAt)),
+        );
+        return rows.map((row) => toCompanyWatchTarget(row as CompanyWatchTargetRow));
       }),
       upsertSourceInsight: Effect.fn("CompanyRepo.upsertSourceInsight")(function* (
         input: CompanySourceInsight,

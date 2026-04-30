@@ -39,6 +39,19 @@ export const CompanyLive = CompanyRpcs.toLayer(
         });
         return yield* service.retrySource(input).pipe(Effect.catchTags({ ErrorDb: Effect.die }));
       }),
+      CompanyWatchTargetCreate: Effect.fn("Rpc.CompanyWatchTargetCreate")(function* (input) {
+        yield* Effect.annotateCurrentSpan({ "company.id": input.companyId });
+        return yield* service
+          .createWatchTarget(input)
+          .pipe(Effect.catchTags({ ErrorDb: Effect.die }));
+      }),
+      CompanyApplicationInviteCreate: Effect.fn("Rpc.CompanyApplicationInviteCreate")(
+        function* (input) {
+          return yield* service
+            .createApplicationInvite(input)
+            .pipe(Effect.catchTags({ ErrorDb: Effect.die }));
+        },
+      ),
     };
   }),
 );

@@ -7,12 +7,15 @@ import type {
   Company,
   CompanyDetail as CompanyDetailData,
   CompanyUpdateInput,
+  MemoMaxPages,
+  MemoRecord,
   MemoRenderInput,
 } from "@capital/server-core/rpc";
-import { memoRenderPreviewAtom } from "../memo/memo.atom";
+import { generateMemoNarrative, memoListAtom, memoRenderPreviewAtom } from "../memo/memo.atom";
 import {
   companyDetailAtom,
   createCompanySource,
+  createCompanyWatchTarget,
   deleteCompany,
   retryCompanySource,
   updateCompany,
@@ -23,6 +26,7 @@ import {
   CompanyDetailLoading,
   type CompanyEditDraft,
   type CompanySourceDraft,
+  type CompanyWatchTargetDraft,
 } from "./ui/company-detail.ui";
 import { MemoPreview, MemoPreviewError, MemoPreviewLoading } from "./ui/memo-preview.ui";
 import {
@@ -45,12 +49,13 @@ function CompanyDetailPage() {
   const company = useAtomValue(companyDetail);
   const refreshCompanyDetail = useAtomRefresh(companyDetail);
   const createSource = useAtomSet(createCompanySource, { mode: "promiseExit" });
+  const createWatchTarget = useAtomSet(createCompanyWatchTarget, { mode: "promiseExit" });
   const retrySource = useAtomSet(retryCompanySource, { mode: "promiseExit" });
   const update = useAtomSet(updateCompany, { mode: "promiseExit" });
   const deleteCompanyById = useAtomSet(deleteCompany, { mode: "promiseExit" });
   const navigate = useNavigate();
   const [leftPanel, setLeftPanel] = React.useState<"checks" | "history">("checks");
-  const [rightPanel, setRightPanel] = React.useState<"sources" | "memo">("sources");
+  const [rightPanel, setRightPanel] = React.useState<"sources" | "watch" | "memo">("sources");
   const [companyEditDraft, setCompanyEditDraft] = React.useState<CompanyEditDraft | null>(null);
   const [companyEditError, setCompanyEditError] = React.useState<string | null>(null);
   const [companyDeleteError, setCompanyDeleteError] = React.useState<string | null>(null);
@@ -63,9 +68,16 @@ function CompanyDetailPage() {
     file: null,
   });
   const [sourceError, setSourceError] = React.useState<string | null>(null);
+  const [watchTargetDraft, setWatchTargetDraft] = React.useState<CompanyWatchTargetDraft>({
+    kind: "web_page",
+    title: "",
+    locator: "",
+  });
+  const [watchTargetError, setWatchTargetError] = React.useState<string | null>(null);
   const [isSavingCompany, startSaveCompanyTransition] = React.useTransition();
   const [isDeletingCompany, startDeleteCompanyTransition] = React.useTransition();
   const [isCreatingSource, startCreateSourceTransition] = React.useTransition();
+  const [isCreatingWatchTarget, startCreateWatchTargetTransition] = React.useTransition();
   const [, startRetrySourceTransition] = React.useTransition();
   const [retryingSourceId, setRetryingSourceId] = React.useState<string | null>(null);
 
@@ -189,6 +201,26 @@ function CompanyDetailPage() {
     });
   };
 
+  const handleCreateWatchTarget = () => {
+    setWatchTargetError(null);
+    startCreateWatchTargetTransition(async () => {
+      const exit = await createWatchTarget({
+        payload: {
+          companyId,
+          kind: watchTargetDraft.kind,
+          title: optionalText(watchTargetDraft.title),
+          locator: watchTargetDraft.locator.trim(),
+        },
+        reactivityKeys: ["companies", `company:${companyId}`],
+      });
+      if (Exit.isFailure(exit)) {
+        setWatchTargetError(Cause.pretty(exit.cause));
+        return;
+      }
+      setWatchTargetDraft((draft) => ({ ...draft, title: "", locator: "" }));
+    });
+  };
+
   return (
     <ModuleLayout>
       <ModuleLayoutHeader>
@@ -220,9 +252,14 @@ function CompanyDetailPage() {
               onCompanyDelete={handleDeleteCompany}
               sourceDraft={sourceDraft}
               sourceError={sourceError}
+              watchTargetDraft={watchTargetDraft}
+              watchTargetError={watchTargetError}
               isCreatingSource={isCreatingSource}
+              isCreatingWatchTarget={isCreatingWatchTarget}
               onSourceDraftChange={setSourceDraft}
               onSourceSubmit={handleCreateSource}
+              onWatchTargetDraftChange={setWatchTargetDraft}
+              onWatchTargetSubmit={handleCreateWatchTarget}
               retryingSourceId={retryingSourceId}
               onSourceRetry={handleRetrySource}
               leftPanel={leftPanel}
@@ -255,10 +292,15 @@ function CompanyDetailContent({
   onCompanyDelete,
   sourceDraft,
   sourceError,
+  watchTargetDraft,
+  watchTargetError,
   isCreatingSource,
+  isCreatingWatchTarget,
   retryingSourceId,
   onSourceDraftChange,
   onSourceSubmit,
+  onWatchTargetDraftChange,
+  onWatchTargetSubmit,
   onSourceRetry,
   leftPanel,
   onLeftPanelChange,
@@ -278,22 +320,101 @@ function CompanyDetailContent({
   readonly onCompanyDelete: () => void;
   readonly sourceDraft: CompanySourceDraft;
   readonly sourceError: string | null;
+  readonly watchTargetDraft: CompanyWatchTargetDraft;
+  readonly watchTargetError: string | null;
   readonly isCreatingSource: boolean;
+  readonly isCreatingWatchTarget: boolean;
   readonly retryingSourceId: string | null;
   readonly onSourceDraftChange: (draft: CompanySourceDraft) => void;
   readonly onSourceSubmit: () => void;
+  readonly onWatchTargetDraftChange: (draft: CompanyWatchTargetDraft) => void;
+  readonly onWatchTargetSubmit: () => void;
   readonly onSourceRetry: (sourceId: string) => void;
   readonly leftPanel: "checks" | "history";
   readonly onLeftPanelChange: (panel: "checks" | "history") => void;
-  readonly rightPanel: "sources" | "memo";
-  readonly onRightPanelChange: (panel: "sources" | "memo") => void;
+  readonly rightPanel: "sources" | "watch" | "memo";
+  readonly onRightPanelChange: (panel: "sources" | "watch" | "memo") => void;
 }) {
-  const memoInput = React.useMemo(() => toMemoRenderInput(detail), [detail]);
+  const [selectedMemoId, setSelectedMemoId] = React.useState<string | null>(null);
+  const [maxPages, setMaxPages] = React.useState<MemoMaxPages>(1);
+  const [narrativeError, setNarrativeError] = React.useState<string | null>(null);
+  const [isGeneratingNarrative, startGenerateNarrativeTransition] = React.useTransition();
+  const generateNarrative = useAtomSet(generateMemoNarrative, { mode: "promiseExit" });
+  const memoListRef = React.useMemo(() => memoListAtom(detail.company.id), [detail.company.id]);
+  const memoList = useAtomValue(memoListRef);
+  const refreshMemoList = useAtomRefresh(memoListRef);
+
+  React.useEffect(() => {
+    setSelectedMemoId(null);
+    setNarrativeError(null);
+  }, [detail.company.id]);
+
+  const memoRecords = React.useMemo<readonly MemoRecord[]>(
+    () =>
+      AsyncResult.match(memoList, {
+        onInitial: () => [],
+        onFailure: () => [],
+        onSuccess: (result) => result.value,
+      }),
+    [memoList],
+  );
+
+  const activeMemo = React.useMemo<MemoRecord | null>(() => {
+    if (memoRecords.length === 0) return null;
+    if (selectedMemoId === null) return memoRecords[0] ?? null;
+    return memoRecords.find((record) => record.id === selectedMemoId) ?? memoRecords[0] ?? null;
+  }, [memoRecords, selectedMemoId]);
+
+  const baseMemoInput = React.useMemo(() => toMemoRenderInput(detail), [detail]);
+  const memoInput = React.useMemo<MemoRenderInput>(() => {
+    if (activeMemo === null) return baseMemoInput;
+    return {
+      ...baseMemoInput,
+      maxPages: activeMemo.config.maxPages,
+      summary: {
+        headline: activeMemo.narrative.headline,
+        thesis: activeMemo.narrative.thesis,
+        executiveSummary: activeMemo.narrative.executiveSummary,
+        keyTakeaways: activeMemo.narrative.keyTakeaways,
+        upside: activeMemo.narrative.upside,
+        risks: activeMemo.narrative.risks,
+      },
+    };
+  }, [baseMemoInput, activeMemo]);
   const memoPreview = useAtomValue(memoRenderPreviewAtom(memoInput));
+
+  const handleGenerateNarrative = () => {
+    setNarrativeError(null);
+    startGenerateNarrativeTransition(async () => {
+      const exit = await generateNarrative({
+        payload: { input: baseMemoInput, config: { maxPages } },
+        reactivityKeys: [`memo:${detail.company.id}`],
+      });
+      if (Exit.isFailure(exit)) {
+        setNarrativeError(Cause.pretty(exit.cause));
+        return;
+      }
+      setSelectedMemoId(exit.value.id);
+      refreshMemoList();
+    });
+  };
+
   const memoPanel = AsyncResult.match(memoPreview, {
     onInitial: () => <MemoPreviewLoading />,
     onFailure: () => <MemoPreviewError />,
-    onSuccess: (result) => <MemoPreview html={result.value.html} />,
+    onSuccess: (result) => (
+      <MemoPreview
+        html={result.value.html}
+        records={memoRecords}
+        activeMemoId={activeMemo?.id ?? null}
+        onSelectMemo={setSelectedMemoId}
+        maxPages={maxPages}
+        onMaxPagesChange={setMaxPages}
+        isGenerating={isGeneratingNarrative}
+        error={narrativeError}
+        onGenerate={handleGenerateNarrative}
+      />
+    ),
   });
 
   return (
@@ -312,10 +433,15 @@ function CompanyDetailContent({
       onCompanyDelete={onCompanyDelete}
       sourceDraft={sourceDraft}
       sourceError={sourceError}
+      watchTargetDraft={watchTargetDraft}
+      watchTargetError={watchTargetError}
       isCreatingSource={isCreatingSource}
+      isCreatingWatchTarget={isCreatingWatchTarget}
       retryingSourceId={retryingSourceId}
       onSourceDraftChange={onSourceDraftChange}
       onSourceSubmit={onSourceSubmit}
+      onWatchTargetDraftChange={onWatchTargetDraftChange}
+      onWatchTargetSubmit={onWatchTargetSubmit}
       onSourceRetry={onSourceRetry}
       leftPanel={leftPanel}
       onLeftPanelChange={onLeftPanelChange}
@@ -359,6 +485,7 @@ function optionalText(value: string): string | null {
 function toMemoRenderInput(detail: CompanyDetailData): MemoRenderInput {
   const insightById = new Map(detail.insights.map((insight) => [insight.id, insight]));
   return {
+    maxPages: null,
     generatedAt: detail.company.updatedAt,
     company: {
       id: detail.company.id,
@@ -373,6 +500,7 @@ function toMemoRenderInput(detail: CompanyDetailData): MemoRenderInput {
     },
     summary: {
       headline: `${detail.company.name} has ${summaryPosture(detail.company.score)} based on current evidence.`,
+      executiveSummary: null,
       thesis:
         detail.company.description ??
         "The memo is generated from the checks, sources, and extracted insights currently available for this company.",

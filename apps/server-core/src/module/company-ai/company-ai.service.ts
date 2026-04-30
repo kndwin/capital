@@ -9,7 +9,7 @@ import {
   type CompanySource,
 } from "../company/company.schema";
 import { capSourceText, getMaxAiInputChars } from "../company/company.util";
-import { CompanyAiSourceExtraction } from "./company-ai.schema";
+import { CompanyAiMarketWatchResult, CompanyAiSourceExtraction } from "./company-ai.schema";
 
 const withModuleLogs = Effect.annotateLogs({ module: "company-ai" });
 
@@ -26,7 +26,7 @@ export class ErrorCompanyAiInvalidResponse extends Schema.TaggedErrorClass<Error
   { message: Schema.String },
 ) {}
 
-const CompanySourceWebSearch = OpenAiTool.WebSearch({
+const CompanySourceWebSearch = OpenAiTool.WebSearchPreview({
   search_context_size: "medium",
 });
 
@@ -49,6 +49,13 @@ export class CompanyAiService extends Context.Service<
         readonly extraction: typeof CompanyAiSourceExtraction.Type;
         readonly acquired: CompanySourceAcquiredContent | null;
       },
+      ErrorCompanyAi | ErrorCompanyAiInvalidResponse
+    >;
+    readonly findMarketWatchCandidates: (input: {
+      readonly company: Company;
+      readonly sites: ReadonlyArray<string>;
+    }) => Effect.Effect<
+      typeof CompanyAiMarketWatchResult.Type,
       ErrorCompanyAi | ErrorCompanyAiInvalidResponse
     >;
   }
@@ -180,7 +187,25 @@ export class CompanyAiService extends Context.Service<
         withModuleLogs,
       );
 
-      return CompanyAiService.of({ extractSourceInsights });
+      const findMarketWatchCandidates = Effect.fn("CompanyAiService.findMarketWatchCandidates")(
+        function* (input: { readonly company: Company; readonly sites: ReadonlyArray<string> }) {
+          yield* Effect.annotateCurrentSpan({ "company.id": input.company.id });
+
+          const response = yield* LanguageModel.generateText({
+            prompt: buildMarketWatchPrompt(input),
+            toolkit,
+            toolChoice: "required",
+          });
+          return yield* decodeMarketWatchResponse(response.text);
+        },
+        Effect.provide(model),
+        Effect.catchTags({
+          AiError: (error: AiError.AiError) => Effect.fail(ErrorCompanyAi.fromAiError(error)),
+        }),
+        withModuleLogs,
+      );
+
+      return CompanyAiService.of({ extractSourceInsights, findMarketWatchCandidates });
     }),
   ).pipe(Layer.provide(OpenAiClientLive));
 }
@@ -247,6 +272,25 @@ const buildPdfExtractionPrompt = (input: {
     `Sector: ${input.company.sector ?? "unknown"}`,
     `Source title: ${input.source.title}`,
     `File name: ${input.source.fileName ?? input.source.title}`,
+  ].join("\n");
+
+const buildMarketWatchPrompt = (input: {
+  readonly company: Company;
+  readonly sites: ReadonlyArray<string>;
+}) =>
+  [
+    "You monitor market websites for venture diligence updates.",
+    "Search only for recent, durable, public web pages that are directly about the company.",
+    "Be conservative: include a candidate only when the page is clearly about this exact company and affects diligence.",
+    "Relevant events include funding, launch, major customer, revenue/traction, layoffs/shutdown, pricing/product change, competitor comparison, regulatory/security/legal risk.",
+    "Exclude weak matches, generic directory pages, job posts, stale pages, social posts without a durable article URL, and pages about similarly named companies.",
+    "Return at most 3 candidates. Return an empty array if nothing is high-confidence.",
+    'Return only minified JSON matching this shape: {"candidates":[{"title":string,"url":string,"summary":string,"eventDate":string|null,"relevanceReason":string,"confidence":number}]}',
+    `Company: ${input.company.name}`,
+    `Website: ${input.company.website ?? "unknown"}`,
+    `Stage: ${input.company.stage}`,
+    `Sector: ${input.company.sector ?? "unknown"}`,
+    `Market websites to check: ${input.sites.join(", ")}`,
   ].join("\n");
 
 const acquireUrlContent = Effect.fn("acquireUrlContent")(function* (
@@ -347,5 +391,20 @@ const decodeExtractionResponse = Effect.fn("decodeExtractionResponse")(function*
     try: () => Schema.decodeUnknownSync(Schema.fromJsonString(CompanyAiSourceExtraction))(jsonText),
     catch: () =>
       new ErrorCompanyAiInvalidResponse({ message: "AI extraction response schema was invalid" }),
+  });
+});
+
+const decodeMarketWatchResponse = Effect.fn("decodeMarketWatchResponse")(function* (text: string) {
+  const jsonText = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
+  return yield* Effect.try({
+    try: () =>
+      Schema.decodeUnknownSync(Schema.fromJsonString(CompanyAiMarketWatchResult))(jsonText),
+    catch: () =>
+      new ErrorCompanyAiInvalidResponse({
+        message: "AI market-watch response schema was invalid",
+      }),
   });
 });

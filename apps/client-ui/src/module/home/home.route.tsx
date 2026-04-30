@@ -17,6 +17,7 @@ type Tone = "mixed" | "strong" | "weak";
 type DashboardCompany = {
   readonly id: string;
   readonly name: string;
+  readonly logoUrl: string | null;
   readonly score: number;
   readonly x: number;
   readonly y: number;
@@ -110,15 +111,26 @@ function PortfolioDashboard({ companies }: { readonly companies: ReadonlyArray<C
                   key={company.id}
                   to="/company/$companyId"
                   params={{ companyId: company.id }}
-                  className="group absolute flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className="group absolute z-10 flex -translate-x-2 -translate-y-1/2 items-center gap-2 rounded-full p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   style={{ left: `${company.x}%`, top: `${100 - company.y}%` }}
                   title={`${company.name} ${company.score}`}
                 >
                   <span
-                    className={`size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full transition group-hover:scale-150 ${toneClassName[company.tone]}`}
+                    className={`size-2.5 rounded-full transition group-hover:scale-150 ${toneClassName[company.tone]}`}
                   />
-                  <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 whitespace-nowrap rounded-md border bg-background/95 px-2 py-1 text-xs font-medium text-foreground opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                    {company.name}
+                  <span className="flex max-w-44 items-center gap-1.5 rounded-full border bg-background/90 px-2 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur transition group-hover:border-primary/40 group-hover:bg-background group-focus-visible:border-primary/40 group-focus-visible:bg-background">
+                    {company.logoUrl ? (
+                      <img
+                        src={company.logoUrl}
+                        alt=""
+                        className="size-4 shrink-0 rounded-sm bg-muted object-contain"
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.hidden = true;
+                        }}
+                      />
+                    ) : null}
+                    <span className="truncate">{company.name}</span>
                     <span className="font-mono tabular-nums text-muted-foreground">
                       {company.score}
                     </span>
@@ -229,6 +241,7 @@ function toDashboardCompanies(companies: ReadonlyArray<Company>): ReadonlyArray<
   return scored.map((company) => ({
     id: company.id,
     name: company.name,
+    logoUrl: getLogoUrl(company.website),
     score: company.score ?? 0,
     x: updatedAtRange === 0 ? 50 : 15 + ((company.updatedAt - minUpdatedAt) / updatedAtRange) * 70,
     y: Math.max(5, Math.min(company.score ?? 0, 95)),
@@ -258,4 +271,10 @@ function getScoreRange(companies: ReadonlyArray<DashboardCompany>) {
   const maxScore = Math.max(...scores);
 
   return minScore === maxScore ? `${maxScore}` : `${minScore}-${maxScore}`;
+}
+
+function getLogoUrl(website: string | null) {
+  if (!website) return null;
+
+  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(website)}&sz=64`;
 }

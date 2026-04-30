@@ -74,6 +74,69 @@ export const CompanySource = Schema.Struct({
 });
 export type CompanySource = typeof CompanySource.Type;
 
+export const CompanyWatchTargetStatus = Schema.Union([
+  Schema.Literal("active"),
+  Schema.Literal("paused"),
+  Schema.Literal("failed"),
+]);
+export type CompanyWatchTargetStatus = typeof CompanyWatchTargetStatus.Type;
+
+export const CompanyWatchTargetKind = Schema.Union([
+  Schema.Literal("web_page"),
+  Schema.Literal("x_profile"),
+]);
+export type CompanyWatchTargetKind = typeof CompanyWatchTargetKind.Type;
+
+export const CompanyWatchTarget = Schema.Struct({
+  id: Schema.String,
+  companyId: Schema.String,
+  kind: CompanyWatchTargetKind,
+  locator: Schema.String,
+  url: Schema.NullOr(Schema.String),
+  title: Schema.NullOr(Schema.String),
+  status: CompanyWatchTargetStatus,
+  lastScannedAt: Schema.NullOr(Schema.Number),
+  lastMatchedAt: Schema.NullOr(Schema.Number),
+  error: Schema.NullOr(Schema.String),
+  updatedAt: Schema.Number,
+});
+export type CompanyWatchTarget = typeof CompanyWatchTarget.Type;
+
+export const CompanyWatchTargetScanStatus = Schema.Union([
+  Schema.Literal("completed"),
+  Schema.Literal("failed"),
+  Schema.Literal("unsupported"),
+  Schema.Literal("skipped"),
+]);
+export type CompanyWatchTargetScanStatus = typeof CompanyWatchTargetScanStatus.Type;
+
+export const CompanyWatchTargetScan = Schema.Struct({
+  id: Schema.String,
+  companyId: Schema.String,
+  watchTargetId: Schema.String,
+  status: CompanyWatchTargetScanStatus,
+  candidateCount: Schema.Number,
+  createdSourceCount: Schema.Number,
+  error: Schema.NullOr(Schema.String),
+  scannedAt: Schema.Number,
+});
+export type CompanyWatchTargetScan = typeof CompanyWatchTargetScan.Type;
+
+export const CompanyWatchTargetDetail = Schema.Struct({
+  target: CompanyWatchTarget,
+  recentScans: Schema.Array(CompanyWatchTargetScan),
+  recentSources: Schema.Array(CompanySource),
+});
+export type CompanyWatchTargetDetail = typeof CompanyWatchTargetDetail.Type;
+
+export const CompanyWatchTargetCreateInput = Schema.Struct({
+  companyId: Schema.String,
+  kind: CompanyWatchTargetKind,
+  locator: Schema.String,
+  title: Schema.NullOr(Schema.String),
+});
+export type CompanyWatchTargetCreateInput = typeof CompanyWatchTargetCreateInput.Type;
+
 export const CompanySourceCreateInput = Schema.Union([
   Schema.Struct({
     companyId: Schema.String,
@@ -136,11 +199,54 @@ export type CompanyInitialSourceInput = typeof CompanyInitialSourceInput.Type;
 
 export const CompanyCreateInput = Schema.Struct({
   name: Schema.String,
-  description: Schema.NullOr(Schema.String),
-  website: Schema.NullOr(Schema.String),
-  source: Schema.NullOr(CompanyInitialSourceInput),
+  url: Schema.String,
 });
 export type CompanyCreateInput = typeof CompanyCreateInput.Type;
+
+export const CompanyApplicationLinkInput = Schema.Struct({
+  title: Schema.NullOr(Schema.String),
+  url: Schema.String,
+});
+export type CompanyApplicationLinkInput = typeof CompanyApplicationLinkInput.Type;
+
+export const CompanyApplicationFileInput = Schema.Struct({
+  fileName: Schema.String,
+  contentBase64: Schema.String,
+});
+export type CompanyApplicationFileInput = typeof CompanyApplicationFileInput.Type;
+
+export const CompanyApplicationSubmitInput = Schema.Struct({
+  token: Schema.String,
+  name: Schema.String,
+  website: Schema.NullOr(Schema.String),
+  description: Schema.NullOr(Schema.String),
+  product: Schema.String,
+  customer: Schema.String,
+  traction: Schema.String,
+  fundraise: Schema.NullOr(Schema.String),
+  notes: Schema.NullOr(Schema.String),
+  links: Schema.Array(CompanyApplicationLinkInput),
+  files: Schema.Array(CompanyApplicationFileInput),
+});
+export type CompanyApplicationSubmitInput = typeof CompanyApplicationSubmitInput.Type;
+
+export const CompanyApplicationSubmitResult = Schema.Struct({
+  companyId: Schema.String,
+});
+export type CompanyApplicationSubmitResult = typeof CompanyApplicationSubmitResult.Type;
+
+export const CompanyApplicationInviteCreateInput = Schema.Struct({
+  expiresInDays: Schema.Number,
+});
+export type CompanyApplicationInviteCreateInput = typeof CompanyApplicationInviteCreateInput.Type;
+
+export const CompanyApplicationInviteCreateResult = Schema.Struct({
+  inviteId: Schema.String,
+  token: Schema.String,
+  url: Schema.String,
+  expiresAt: Schema.Number,
+});
+export type CompanyApplicationInviteCreateResult = typeof CompanyApplicationInviteCreateResult.Type;
 
 export const CompanyUpdateInput = Schema.Struct({
   id: Schema.String,
@@ -227,6 +333,7 @@ export const CompanyDetail = Schema.Struct({
   company: Company,
   checkGroups: Schema.Array(CompanyCheckGroup),
   sources: Schema.Array(CompanySource),
+  watchTargets: Schema.Array(CompanyWatchTargetDetail),
   insights: Schema.Array(CompanySourceInsight),
   history: Schema.Array(CompanyHistoryItem),
 });

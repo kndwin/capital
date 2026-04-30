@@ -46,71 +46,80 @@ export const renderMemoHtml = (input: MemoRenderInput): string => {
       --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--parchment); color: var(--near-black); font-family: var(--serif); font-weight: 400; line-height: 1.55; }
-    .memo { display: grid; gap: 18px; padding: 18px 0 48px; }
-    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 18mm 20mm; background: var(--parchment); box-shadow: 0 0 0 1pt var(--border), 0 4pt 24pt rgba(0,0,0,0.05); page-break-after: always; break-after: page; }
+    body { margin: 0; background: var(--parchment); color: var(--near-black); font-family: var(--serif); font-weight: 400; font-size: 13.5px; line-height: 1.5; }
+    .memo { display: grid; gap: 18px; padding: 20px 18px 40px; }
+    .page { width: min(100%, 760px); margin: 0 auto; padding: 28px 36px 40px; background: var(--parchment); box-shadow: 0 0 0 1pt var(--border), 0 4pt 20pt rgba(20, 20, 19, 0.07); page-break-after: always; break-after: page; }
     .page:last-child { page-break-after: auto; break-after: auto; }
-    .cover { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; border-left: 3pt solid var(--brand); padding: 3px 0 6px 16px; }
-    .eyebrow { color: var(--brand); font-size: 10px; font-weight: 600; letter-spacing: 0.22em; line-height: 1.35; text-transform: uppercase; }
-    h1, h2, h3 { margin: 0; line-height: 1.08; }
-    h1 { margin-top: 10px; font-size: 46px; font-weight: 500; letter-spacing: -0.04em; line-height: 1.1; }
-    h2 { font-size: 24px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
-    h3 { font-size: 17px; font-weight: 500; line-height: 1.3; }
+    .cover { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 22px; border-left: 3pt solid var(--brand); padding: 2px 0 4px 14px; }
+    .eyebrow { color: var(--brand); font-size: 9px; font-weight: 600; letter-spacing: 0.22em; line-height: 1.3; text-transform: uppercase; }
+    h1, h2, h3 { margin: 0; line-height: 1.1; }
+    h1 { margin-top: 6px; font-size: 30px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; }
+    h2 { font-size: 18px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.2; }
+    h3 { font-size: 14px; font-weight: 500; line-height: 1.3; }
     p { margin: 0; }
-    .deck { margin-top: 12px; max-width: 680px; color: var(--dark-warm); font-size: 18px; }
-    .hero-score { min-width: 150px; text-align: right; }
-    .hero-score-value { color: var(--near-black); font-size: 42px; font-weight: 500; line-height: 1; }
-    .hero-score-label { margin-top: 8px; color: var(--stone); font-size: 14px; }
-    .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 28px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .metric { padding: 12px 18px 14px 0; }
-    .metric-label { color: var(--stone); font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
-    .metric-value { margin-top: 5px; color: var(--near-black); font-size: 20px; font-weight: 500; }
+    .deck { margin-top: 8px; max-width: 62ch; color: var(--dark-warm); font-size: 14px; line-height: 1.5; }
+    .hero-score { min-width: 110px; text-align: right; }
+    .hero-score-value { color: var(--brand); font-size: 30px; font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
+    .hero-score-label { margin-top: 5px; color: var(--stone); font-size: 11px; letter-spacing: 0.04em; }
+    .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 18px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .metric { padding: 9px 14px 11px 0; }
+    .metric-label { color: var(--stone); font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+    .metric-value { margin-top: 4px; color: var(--near-black); font-size: 14px; font-weight: 500; }
     .metric:first-child .metric-value { color: var(--brand); }
-    .section { margin-top: 30px; }
-    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
+    .section { margin-top: 20px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
     .card, .check-group, .evidence-card { break-inside: avoid; }
     .card { border: 0; background: transparent; padding: 0; }
-    .headline { color: var(--near-black); font-size: 18px; font-weight: 500; line-height: 1.45; }
-    .thesis { margin-top: 10px; color: var(--dark-warm); font-size: 16px; }
-    .takeaways { display: grid; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
-    .takeaways li { border-left: 2pt solid var(--brand); background: var(--ivory); padding: 10px 14px; }
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-    .bullets { margin: 12px 0 0; padding-left: 20px; color: var(--dark-warm); }
-    .check-group { margin-top: 14px; border-top: 1px solid var(--border); background: transparent; overflow: hidden; }
-    .check-group-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; border-bottom: 1px solid var(--border-soft); padding: 14px 0; }
-    .check-summary { margin-top: 6px; color: var(--stone); }
-    .score-pill, .tag { display: inline-block; border: 0; background: var(--brand-soft); padding: 4px 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+    .headline { color: var(--near-black); font-size: 14px; font-weight: 500; line-height: 1.4; max-width: 62ch; }
+    .thesis { margin-top: 6px; color: var(--dark-warm); font-size: 13px; max-width: 62ch; line-height: 1.55; }
+    .takeaways { display: grid; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
+    .takeaways li { border-left: 2pt solid var(--brand); background: var(--ivory); padding: 7px 11px; font-size: 13px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .bullets { margin: 8px 0 0; padding-left: 18px; color: var(--dark-warm); font-size: 13px; }
+    .bullets li { margin-top: 3px; }
+    .check-group { margin-top: 10px; border-top: 1px solid var(--border); background: transparent; overflow: hidden; }
+    .check-group-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; border-bottom: 1px solid var(--border-soft); padding: 10px 0; }
+    .check-summary { margin-top: 4px; color: var(--stone); font-size: 12px; }
+    .score-pill, .tag { display: inline-block; border: 0; background: var(--brand-soft); padding: 3px 7px; font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
     .checks { display: grid; gap: 0; }
-    .check { display: grid; grid-template-columns: 9rem minmax(0, 1fr) 5rem; gap: 14px; border-top: 1px solid var(--border-soft); padding: 12px 0; }
+    .check { display: grid; grid-template-columns: 7rem minmax(0, 1fr) 3.5rem; gap: 12px; border-top: 1px solid var(--border-soft); padding: 9px 0; }
     .check:first-child { border-top: 0; }
     .status-pass { color: var(--brand); }
     .status-concern { color: var(--olive); }
     .status-fail { color: var(--error); }
     .status-unknown { color: var(--stone); }
-    .check-title { font-weight: 500; }
-    .detail { color: var(--stone); font-size: 13px; }
-    .rationale { margin-top: 4px; color: var(--dark-warm); font-size: 14px; }
-    .citations { margin-top: 7px; color: var(--stone); font-size: 12px; }
-    .evidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    .evidence-card { border-left: 2pt solid var(--brand); background: var(--ivory); padding: 14px 16px; }
-    .quote { margin-top: 9px; color: var(--dark-warm); font-size: 15px; }
-    table { width: 100%; border-collapse: collapse; background: var(--ivory); }
-    th, td { border: 0.5pt solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
-    th { color: var(--stone); font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+    .check-title { font-weight: 500; font-size: 13px; }
+    .detail { color: var(--stone); font-size: 11.5px; }
+    .rationale { margin-top: 3px; color: var(--dark-warm); font-size: 12.5px; line-height: 1.5; }
+    .citations { margin-top: 5px; color: var(--stone); font-size: 11px; }
+    .evidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .evidence-card { border-left: 2pt solid var(--brand); background: var(--ivory); padding: 10px 12px; }
+    .quote { margin-top: 6px; color: var(--dark-warm); font-size: 13px; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; background: var(--ivory); font-size: 12px; }
+    th, td { border: 0.5pt solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+    th { color: var(--stone); font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
     .open-items { margin: 0; padding-left: 20px; }
     .muted { color: var(--stone); }
     @media print {
-      body { background: var(--parchment); }
-      .memo { display: block; padding: 0; }
+      body { background: var(--parchment); font-size: 11pt; }
+      .memo { display: block; gap: 0; padding: 0; }
       .page { width: auto; min-height: auto; margin: 0; padding: 0; box-shadow: none; }
     }
-    @media (max-width: 760px) {
-      .memo { display: block; padding: 0; }
-      .page { width: 100%; min-height: auto; padding: 24px 16px 48px; box-shadow: none; }
-      .cover { grid-template-columns: 1fr; padding-left: 14px; }
+    @media (max-width: 720px) {
+      .memo { gap: 14px; padding: 14px 12px 32px; }
+      .page { padding: 22px 22px 32px; }
+      h1 { font-size: 26px; }
+      .deck { font-size: 13.5px; }
+      .meta-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col, .evidence-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .cover { grid-template-columns: 1fr; padding-left: 12px; }
       .hero-score { text-align: left; }
-      h1 { font-size: 38px; }
-      .meta-grid, .two-col, .evidence-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 460px) {
+      h1 { font-size: 24px; }
+      .meta-grid { grid-template-columns: 1fr; }
       .check { grid-template-columns: 1fr; }
     }
   </style>
@@ -143,6 +152,11 @@ export const renderMemoHtml = (input: MemoRenderInput): string => {
         <div class="card">
           <p class="headline">${escapeHtml(input.summary.headline)}</p>
           <p class="thesis">${escapeHtml(input.summary.thesis)}</p>
+          ${
+            input.summary.executiveSummary
+              ? `<p class="thesis">${escapeHtml(input.summary.executiveSummary)}</p>`
+              : ""
+          }
           <ul class="takeaways">${input.summary.keyTakeaways.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
         </div>
       </section>
@@ -155,15 +169,19 @@ export const renderMemoHtml = (input: MemoRenderInput): string => {
         </div>
       </section>
     </article>
-
-    <article class="page">
+${
+  (input.maxPages ?? 3) >= 2
+    ? `    <article class="page">
       <section class="section">
         <div class="section-head"><h2>Check Findings</h2><span class="muted">${input.checkGroups.length} groups</span></div>
         ${input.checkGroups.map(renderCheckGroup).join("")}
       </section>
-    </article>
-
-    <article class="page">
+    </article>`
+    : ""
+}
+${
+  (input.maxPages ?? 3) >= 3
+    ? `    <article class="page">
       <section class="section">
         <div class="section-head"><h2>Evidence</h2><span class="muted">${input.insights.length} insights</span></div>
         <div class="evidence-grid">${input.insights.map((insight) => renderInsight(insight, sourceById, checkById)).join("")}</div>
@@ -185,7 +203,9 @@ export const renderMemoHtml = (input: MemoRenderInput): string => {
             : `<ul class="open-items">${openItems.map(({ group, check }) => `<li>${escapeHtml(group.label)} · ${escapeHtml(check.label)}: ${escapeHtml(check.rationale)}</li>`).join("")}</ul>`
         }</div>
       </section>
-    </article>
+    </article>`
+    : ""
+}
   </main>
 </body>
 </html>`;
@@ -282,4 +302,10 @@ const renderSourceRow = (source: MemoRenderSource): string => `<tr>
   <td>${escapeHtml(source.subtitle ?? "")}</td>
 </tr>`;
 
-const formatGeneratedAt = (generatedAt: number): string => String(generatedAt);
+const generatedAtFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
+const formatGeneratedAt = (generatedAt: number): string => generatedAtFormatter.format(generatedAt);

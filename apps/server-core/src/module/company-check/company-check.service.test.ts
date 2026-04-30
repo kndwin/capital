@@ -89,12 +89,18 @@ const CompanyRepoTestLive = Layer.effect(
       list: Effect.fn("CompanyRepoTest.list")(function* () {
         return Array.from((yield* Ref.get(companies)).values());
       }),
+      getApplicationInviteByTokenHash: () => Effect.succeed(undefined),
+      createApplicationInvite: () => Effect.void,
+      markApplicationInviteUsed: () => Effect.void,
       upsertSource: (input) => Effect.succeed(input),
       getSource: () => Effect.succeed(undefined),
       getSourceAcquiredText: () => Effect.succeed(null),
       updateSourceStatus: () => Effect.void,
       updateSourceAcquiredContent: () => Effect.void,
       nextSourceOrder: () => Effect.succeed(10),
+      createWatchTarget: (input) => Effect.succeed(input),
+      updateWatchTargetScan: () => Effect.void,
+      listWatchTargets: () => Effect.succeed([]),
       upsertSourceInsight: Effect.fn("CompanyRepoTest.upsertSourceInsight")(function* (input) {
         yield* Ref.update(insights, (items) => new Map(items).set(input.id, input));
         return input;

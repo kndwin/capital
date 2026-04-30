@@ -1,4 +1,5 @@
 import type { Company } from "@capital/server-core/rpc";
+import type React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,9 +54,7 @@ export function CompanyList({
             params={{ companyId: company.id }}
             className="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-background text-xs font-medium text-muted-foreground">
-              {getInitials(company.name)}
-            </div>
+            <CompanyLogo company={company} />
             <div className="min-w-0">
               <h2 className="truncate text-sm font-semibold tracking-tight group-hover:text-primary">
                 {company.name}
@@ -67,17 +66,25 @@ export function CompanyList({
             </div>
           </Link>
 
-          <ScoreMeter score={company.score} verdict={getVerdict(company)} />
+          <CompanyRowLink company={company} label={`Open ${company.name} score`}>
+            <ScoreMeter score={company.score} verdict={getVerdict(company)} />
+          </CompanyRowLink>
 
-          <div className="flex items-center justify-between gap-3 lg:block">
-            <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground lg:hidden">
-              Verdict
-            </span>
-            <VerdictPill verdict={getVerdict(company)} />
-          </div>
+          <CompanyRowLink company={company} label={`Open ${company.name} verdict`}>
+            <div className="flex items-center justify-between gap-3 lg:block">
+              <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground lg:hidden">
+                Verdict
+              </span>
+              <VerdictPill verdict={getVerdict(company)} />
+            </div>
+          </CompanyRowLink>
 
-          <Metric label="Sources" value={String(getSourceCount(company))} />
-          <Metric label="Updated" value={formatUpdatedAt(company.updatedAt)} />
+          <CompanyRowLink company={company} label={`Open ${company.name} sources`}>
+            <Metric label="Sources" value={String(getSourceCount(company))} />
+          </CompanyRowLink>
+          <CompanyRowLink company={company} label={`Open ${company.name} update time`}>
+            <Metric label="Updated" value={formatUpdatedAt(company.updatedAt)} />
+          </CompanyRowLink>
           {onDeleteCompany ? (
             <CompanyListActions
               company={company}
@@ -87,6 +94,47 @@ export function CompanyList({
           ) : null}
         </div>
       ))}
+    </div>
+  );
+}
+
+function CompanyRowLink({
+  company,
+  label,
+  children,
+}: {
+  readonly company: Company;
+  readonly label: string;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <Link
+      to="/company/$companyId"
+      params={{ companyId: company.id }}
+      aria-label={label}
+      className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function CompanyLogo({ company }: { readonly company: Company }) {
+  const logoUrl = getLogoUrl(company.website);
+  return (
+    <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-background text-xs font-medium text-muted-foreground">
+      <span>{getInitials(company.name)}</span>
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt=""
+          className="absolute size-6 rounded-sm bg-background object-contain"
+          loading="lazy"
+          onError={(event) => {
+            event.currentTarget.hidden = true;
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -121,7 +169,7 @@ function CompanyListActions({
               render={
                 <button
                   type="button"
-                  className="flex w-full rounded-sm px-2 py-1.5 text-left text-sm text-destructive outline-none hover:bg-accent focus-visible:bg-accent disabled:pointer-events-none disabled:opacity-50"
+                  className="flex w-full rounded-sm px-2 py-1.5 text-left text-sm text-destructive outline-none hover:bg-destructive/10 focus-visible:bg-destructive/10 disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-destructive/20 dark:focus-visible:bg-destructive/20"
                   disabled={isDeleting}
                 />
               }
@@ -257,6 +305,12 @@ function getInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+}
+
+function getLogoUrl(website: string | null) {
+  if (!website) return null;
+
+  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(website)}&sz=64`;
 }
 
 function getSourceCount(company: Company) {

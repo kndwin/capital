@@ -42,8 +42,41 @@ export const MemoRenderSummary = Schema.Struct({
   keyTakeaways: Schema.Array(Schema.String),
   upside: Schema.Array(Schema.String),
   risks: Schema.Array(Schema.String),
+  executiveSummary: Schema.NullOr(Schema.String),
 });
 export type MemoRenderSummary = typeof MemoRenderSummary.Type;
+
+export const MemoNarrative = Schema.Struct({
+  headline: Schema.String,
+  thesis: Schema.String,
+  executiveSummary: Schema.String,
+  keyTakeaways: Schema.Array(Schema.String),
+  upside: Schema.Array(Schema.String),
+  risks: Schema.Array(Schema.String),
+});
+export type MemoNarrative = typeof MemoNarrative.Type;
+
+export const MemoMaxPages = Schema.Union([Schema.Literal(1), Schema.Literal(2), Schema.Literal(3)]);
+export type MemoMaxPages = typeof MemoMaxPages.Type;
+
+export const MemoNarrativeConfig = Schema.Struct({
+  maxPages: MemoMaxPages,
+});
+export type MemoNarrativeConfig = typeof MemoNarrativeConfig.Type;
+
+export const MemoRecord = Schema.Struct({
+  id: Schema.String,
+  companyId: Schema.String,
+  narrative: MemoNarrative,
+  config: MemoNarrativeConfig,
+  createdAt: Schema.Number,
+});
+export type MemoRecord = typeof MemoRecord.Type;
+
+export const MemoListByCompanyInput = Schema.Struct({
+  companyId: Schema.String,
+});
+export type MemoListByCompanyInput = typeof MemoListByCompanyInput.Type;
 
 export const MemoRenderCheck = Schema.Struct({
   id: Schema.String,
@@ -118,8 +151,15 @@ export const MemoRenderInput = Schema.Struct({
   checkGroups: Schema.Array(MemoRenderCheckGroup),
   sources: Schema.Array(MemoRenderSource),
   insights: Schema.Array(MemoRenderInsight),
+  maxPages: Schema.NullOr(Schema.Number),
 });
 export type MemoRenderInput = typeof MemoRenderInput.Type;
+
+export const MemoNarrativeGenerateInput = Schema.Struct({
+  input: MemoRenderInput,
+  config: MemoNarrativeConfig,
+});
+export type MemoNarrativeGenerateInput = typeof MemoNarrativeGenerateInput.Type;
 
 export const MemoRenderOutput = Schema.Struct({
   html: Schema.String,

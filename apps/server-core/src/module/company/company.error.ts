@@ -4,3 +4,8 @@ export class ErrorCompanyNotFound extends Schema.TaggedErrorClass<ErrorCompanyNo
   "ErrorCompanyNotFound",
   { id: Schema.String },
 ) {}
+
+export class ErrorCompanyApplicationInviteInvalid extends Schema.TaggedErrorClass<ErrorCompanyApplicationInviteInvalid>()(
+  "ErrorCompanyApplicationInviteInvalid",
+  { message: Schema.String },
+) {}

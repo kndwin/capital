@@ -25,3 +25,9 @@ export const deleteCompany = CompanyClient.mutation("CompanyDelete");
 export const createCompanySource = CompanyClient.mutation("CompanySourceCreate");
 
 export const retryCompanySource = CompanyClient.mutation("CompanySourceRetry");
+
+export const createCompanyWatchTarget = CompanyClient.mutation("CompanyWatchTargetCreate");
+
+export const createCompanyApplicationInvite = CompanyClient.mutation(
+  "CompanyApplicationInviteCreate",
+);

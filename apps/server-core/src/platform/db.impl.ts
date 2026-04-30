@@ -11,16 +11,26 @@ import {
   companyCheckRun,
   companyEngineCheck,
 } from "../module/company-check/company-check.table";
-import { company, companySource, companySourceInsight } from "../module/company/company.table";
+import {
+  company,
+  companyApplicationInvite,
+  companySource,
+  companySourceInsight,
+  companyWatchTarget,
+} from "../module/company/company.table";
+import { companyMemo } from "../module/memo/memo.table";
 import { account, session, user, verification } from "./auth/auth.table";
 import { Db, ErrorDb, type DbService } from "./db.contract";
 import { DbSsl, DbUrlOptional } from "./db.config";
 
 const schema = {
   company,
+  companyApplicationInvite,
+  companyMemo,
   companyCheck,
   companySource,
   companySourceInsight,
+  companyWatchTarget,
   companyCheckRun,
   companyEngineCheck,
   companyCheckOverride,

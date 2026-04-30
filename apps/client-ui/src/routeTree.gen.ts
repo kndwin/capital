@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './app.route'
 import { Route as moduleAuthAuthDotrouteRouteImport } from './module/auth/auth.route'
 import { Route as moduleCompanyCompanyDotrouteRouteImport } from './module/company/company.route'
+import { Route as moduleCompanyCompanyApplicationDotrouteRouteImport } from './module/company/company-application.route'
 import { Route as moduleHomeHomeDotrouteRouteImport } from './module/home/home.route'
 import { Route as moduleCompanyCompanyDetailDotrouteRouteImport } from './module/company/company-detail.route'
 
@@ -23,6 +24,12 @@ const moduleCompanyCompanyDotrouteRoute =
   moduleCompanyCompanyDotrouteRouteImport.update({
     id: '/company',
     path: '/company',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const moduleCompanyCompanyApplicationDotrouteRoute =
+  moduleCompanyCompanyApplicationDotrouteRouteImport.update({
+    id: '/apply',
+    path: '/apply',
     getParentRoute: () => rootRouteImport,
   } as any)
 const moduleHomeHomeDotrouteRoute = moduleHomeHomeDotrouteRouteImport.update({
@@ -39,12 +46,14 @@ const moduleCompanyCompanyDetailDotrouteRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof moduleHomeHomeDotrouteRoute
+  '/apply': typeof moduleCompanyCompanyApplicationDotrouteRoute
   '/company': typeof moduleCompanyCompanyDotrouteRoute
   '/login': typeof moduleAuthAuthDotrouteRoute
   '/company/$companyId': typeof moduleCompanyCompanyDetailDotrouteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof moduleHomeHomeDotrouteRoute
+  '/apply': typeof moduleCompanyCompanyApplicationDotrouteRoute
   '/company': typeof moduleCompanyCompanyDotrouteRoute
   '/login': typeof moduleAuthAuthDotrouteRoute
   '/company/$companyId': typeof moduleCompanyCompanyDetailDotrouteRoute
@@ -52,20 +61,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof moduleHomeHomeDotrouteRoute
+  '/apply': typeof moduleCompanyCompanyApplicationDotrouteRoute
   '/company': typeof moduleCompanyCompanyDotrouteRoute
   '/login': typeof moduleAuthAuthDotrouteRoute
   '/company/$companyId': typeof moduleCompanyCompanyDetailDotrouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/company' | '/login' | '/company/$companyId'
+  fullPaths: '/' | '/apply' | '/company' | '/login' | '/company/$companyId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/company' | '/login' | '/company/$companyId'
-  id: '__root__' | '/' | '/company' | '/login' | '/company/$companyId'
+  to: '/' | '/apply' | '/company' | '/login' | '/company/$companyId'
+  id:
+    | '__root__'
+    | '/'
+    | '/apply'
+    | '/company'
+    | '/login'
+    | '/company/$companyId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   moduleHomeHomeDotrouteRoute: typeof moduleHomeHomeDotrouteRoute
+  moduleCompanyCompanyApplicationDotrouteRoute: typeof moduleCompanyCompanyApplicationDotrouteRoute
   moduleCompanyCompanyDotrouteRoute: typeof moduleCompanyCompanyDotrouteRoute
   moduleAuthAuthDotrouteRoute: typeof moduleAuthAuthDotrouteRoute
   moduleCompanyCompanyDetailDotrouteRoute: typeof moduleCompanyCompanyDetailDotrouteRoute
@@ -87,6 +104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof moduleCompanyCompanyDotrouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apply': {
+      id: '/apply'
+      path: '/apply'
+      fullPath: '/apply'
+      preLoaderRoute: typeof moduleCompanyCompanyApplicationDotrouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -106,6 +130,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   moduleHomeHomeDotrouteRoute: moduleHomeHomeDotrouteRoute,
+  moduleCompanyCompanyApplicationDotrouteRoute:
+    moduleCompanyCompanyApplicationDotrouteRoute,
   moduleCompanyCompanyDotrouteRoute: moduleCompanyCompanyDotrouteRoute,
   moduleAuthAuthDotrouteRoute: moduleAuthAuthDotrouteRoute,
   moduleCompanyCompanyDetailDotrouteRoute:

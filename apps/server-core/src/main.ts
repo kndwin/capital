@@ -20,8 +20,11 @@ import {
   CompanySourceIngestQueueLive,
   CompanySourceWorkflowLive,
 } from "./module/company/company-source.workflow";
+import { CompanyMarketWatchCronLive } from "./module/company/company-market-watch.cron";
+import { CompanyMarketWatchServiceLive } from "./module/company/company-market-watch.service";
 import { CompanyAiServiceLive } from "./module/company-ai/company-ai.service";
 import { HealthLive } from "./module/health/health.rpc.impl";
+import { MemoRepoLive } from "./module/memo/memo.repo";
 import { MemoLive } from "./module/memo/memo.rpc.impl";
 import { MemoServiceLive } from "./module/memo/memo.service";
 import { HttpApiLive } from "./platform/http.impl";
@@ -48,7 +51,19 @@ const Domain = Layer.mergeAll(
     Layer.provide(CompanyCheckDomain),
     Layer.provide(CompanySourceIngestQueueLive),
   ),
+  CompanyMarketWatchServiceLive.pipe(
+    Layer.provide(CompanyAiServiceLive),
+    Layer.provide(CompanyRepoLive),
+    Layer.provide(
+      CompanyServiceLive.pipe(
+        Layer.provide(CompanyRepoLive),
+        Layer.provide(CompanyCheckDomain),
+        Layer.provide(CompanySourceIngestQueueLive),
+      ),
+    ),
+  ),
   MemoServiceLive,
+  MemoRepoLive,
 );
 
 const Handlers = Layer.mergeAll(HealthLive, CompanyLive, CompanyCheckLive, MemoLive).pipe(
@@ -70,6 +85,7 @@ const AppLive = Layer.mergeAll(
     Layer.provide(CompanySourceDomain),
     Layer.provide(CompanyRepoLive),
   ),
+  CompanyMarketWatchCronLive,
 ).pipe(Layer.provide(Domain), Layer.provide(Infra), Layer.provide(WorkflowEngineLive));
 
 const PortConfig = Config.int("PORT").pipe(Config.withDefault(38412));

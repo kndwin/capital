@@ -1,6 +1,7 @@
 import type { MemoRenderInput } from "./memo.schema";
 
 export const AcmeMemoRenderInput: MemoRenderInput = {
+  maxPages: null,
   generatedAt: 1_777_680_000_000,
   company: {
     id: "acme-robotics",
@@ -17,6 +18,7 @@ export const AcmeMemoRenderInput: MemoRenderInput = {
     headline: "Acme has credible early traction, but financial evidence conflicts.",
     thesis:
       "The company shows real customer pull and robotics-market relevance, but the current source set leaves GTM depth, durability of growth, and competitive positioning under-verified.",
+    executiveSummary: null,
     keyTakeaways: [
       "Pitch deck claims $1.2M ARR and 22% MoM growth.",
       "Q3 financials show a lower ARR base after excluding pilots.",

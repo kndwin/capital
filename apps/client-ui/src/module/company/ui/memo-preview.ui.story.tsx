@@ -10,7 +10,17 @@ const sampleHtml = `<!doctype html>
 const meta: Meta<typeof MemoPreview> = {
   title: "Company/MemoPreview",
   component: MemoPreview,
-  args: { html: sampleHtml },
+  args: {
+    html: sampleHtml,
+    records: [],
+    activeMemoId: null,
+    onSelectMemo: () => undefined,
+    maxPages: 1,
+    onMaxPagesChange: () => undefined,
+    isGenerating: false,
+    error: null,
+    onGenerate: () => undefined,
+  },
   decorators: [
     (Story) => (
       <div className="max-w-4xl p-4">

@@ -41,6 +41,12 @@ export type CompanySourceDraft = {
   readonly file: File | null;
 };
 
+export type CompanyWatchTargetDraft = {
+  readonly kind: "web_page" | "x_profile";
+  readonly title: string;
+  readonly locator: string;
+};
+
 export type CompanyEditDraft = {
   readonly name: string;
   readonly description: string;
@@ -55,9 +61,14 @@ export function CompanyDetail({
   detail,
   sourceDraft,
   sourceError,
+  watchTargetDraft,
+  watchTargetError,
   isCreatingSource,
+  isCreatingWatchTarget,
   onSourceDraftChange,
   onSourceSubmit,
+  onWatchTargetDraftChange,
+  onWatchTargetSubmit,
   retryingSourceId,
   onSourceRetry,
   leftPanel = "checks",
@@ -80,15 +91,20 @@ export function CompanyDetail({
   readonly detail: CompanyDetailData;
   readonly sourceDraft?: CompanySourceDraft;
   readonly sourceError?: string | null;
+  readonly watchTargetDraft?: CompanyWatchTargetDraft;
+  readonly watchTargetError?: string | null;
   readonly isCreatingSource?: boolean;
+  readonly isCreatingWatchTarget?: boolean;
   readonly onSourceDraftChange?: (draft: CompanySourceDraft) => void;
   readonly onSourceSubmit?: () => void;
+  readonly onWatchTargetDraftChange?: (draft: CompanyWatchTargetDraft) => void;
+  readonly onWatchTargetSubmit?: () => void;
   readonly retryingSourceId?: string | null;
   readonly onSourceRetry?: (sourceId: string) => void;
   readonly leftPanel?: "checks" | "history";
   readonly onLeftPanelChange?: (panel: "checks" | "history") => void;
-  readonly rightPanel?: "sources" | "memo";
-  readonly onRightPanelChange?: (panel: "sources" | "memo") => void;
+  readonly rightPanel?: "sources" | "watch" | "memo";
+  readonly onRightPanelChange?: (panel: "sources" | "watch" | "memo") => void;
   readonly memoPanel?: React.ReactNode;
   readonly companyEditDraft?: CompanyEditDraft;
   readonly companyEditError?: string | null;
@@ -107,6 +123,8 @@ export function CompanyDetail({
   const [expandedSourceId, setExpandedSourceId] = React.useState<string | null>(null);
   const [previewSource, setPreviewSource] = React.useState<CompanySource | null>(null);
   const { company, checkGroups, sources, insights, history } = detail;
+  const watchTargetItems = detail.watchTargets.map((entry) => entry.target);
+  const activeWatchTargets = watchTargetItems.filter((target) => target.status === "active");
   const resolved = checkGroups.reduce(
     (count, group) => count + group.checks.filter((check) => check.status !== "unknown").length,
     0,
@@ -123,6 +141,16 @@ export function CompanyDetail({
     return grouped;
   }, [insights, sources]);
   const checks = React.useMemo(() => checkGroups.flatMap((group) => group.checks), [checkGroups]);
+  const insightsById = React.useMemo(() => {
+    const indexed = new Map<string, CompanySourceInsight>();
+    for (const insight of insights) indexed.set(insight.id, insight);
+    return indexed;
+  }, [insights]);
+  const sourcesById = React.useMemo(() => {
+    const indexed = new Map<string, CompanySource>();
+    for (const source of sources) indexed.set(source.id, source);
+    return indexed;
+  }, [sources]);
 
   const openSource = (source: CompanySource) => {
     if (source.kind === "url" && source.url) {
@@ -159,8 +187,18 @@ export function CompanyDetail({
                 {company.description ?? "No company summary has been extracted yet."}
               </p>
               <p className="text-sm text-muted-foreground">
-                {resolved} of {total} checks resolved · {sources.length} sources · 2 changes today
+                {resolved} of {total} checks resolved · {sources.length} sources ·{" "}
+                {activeWatchTargets.length} websites watched
               </p>
+              {activeWatchTargets.length > 0 ? (
+                <div
+                  data-slot="company-detail-market-watch-badge"
+                  className="flex w-fit items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium text-primary"
+                >
+                  <span className="size-1.5 rounded-full bg-primary" />
+                  Market watch active
+                </div>
+              ) : null}
             </div>
             <div data-slot="company-detail-composite" className="text-left lg:text-right">
               <div className="text-6xl font-light tabular-nums tracking-tight">
@@ -239,7 +277,14 @@ export function CompanyDetail({
                 description="Checks will resolve as sources are processed."
               />
             ) : (
-              checkGroups.map((group) => <CheckGroupView key={group.id} group={group} />)
+              checkGroups.map((group) => (
+                <CheckGroupView
+                  key={group.id}
+                  group={group}
+                  insightsById={insightsById}
+                  sourcesById={sourcesById}
+                />
+              ))
             )}
           </div>
         </section>
@@ -281,6 +326,7 @@ export function CompanyDetail({
           <PanelTabHeader
             tabs={[
               { id: "sources", label: "Sources" },
+              { id: "watch", label: "Watch" },
               { id: "memo", label: "Memo" },
             ]}
             active={rightPanel}
@@ -319,6 +365,22 @@ export function CompanyDetail({
                 )}
               </div>
             </>
+          ) : rightPanel === "watch" ? (
+            watchTargetDraft && onWatchTargetDraftChange && onWatchTargetSubmit ? (
+              <WatchTargetsPanel
+                targets={watchTargetItems}
+                draft={watchTargetDraft}
+                error={watchTargetError}
+                isSubmitting={isCreatingWatchTarget}
+                onChange={onWatchTargetDraftChange}
+                onSubmit={onWatchTargetSubmit}
+              />
+            ) : (
+              <EmptyPanel
+                title="No watch controls"
+                description="Watch controls are not available."
+              />
+            )
           ) : (
             (memoPanel ?? (
               <EmptyPanel title="No memo preview" description="Memo preview is not available." />
@@ -476,6 +538,114 @@ function CompanySelect({
         </option>
       ))}
     </select>
+  );
+}
+
+function WatchTargetsPanel({
+  targets,
+  draft,
+  error,
+  isSubmitting,
+  onChange,
+  onSubmit,
+}: {
+  readonly targets: ReadonlyArray<CompanyDetailData["watchTargets"][number]["target"]>;
+  readonly draft: CompanyWatchTargetDraft;
+  readonly error?: string | null;
+  readonly isSubmitting?: boolean;
+  readonly onChange: (draft: CompanyWatchTargetDraft) => void;
+  readonly onSubmit: () => void;
+}) {
+  const activeTargets = targets.filter((target) => target.status === "active");
+  const canSubmit = draft.locator.trim().length > 0 && !isSubmitting;
+  const placeholder =
+    draft.kind === "x_profile"
+      ? "@company or https://x.com/company"
+      : "https://company.com/changelog";
+  return (
+    <section data-slot="company-detail-watch-targets" className="grid gap-3 border-b p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">Watch targets</h3>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Monitor websites and social profiles for new diligence signals.
+          </p>
+        </div>
+        <span className="rounded-full border px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+          {activeTargets.length} active
+        </span>
+      </div>
+      {activeTargets.length > 0 ? (
+        <div className="space-y-2">
+          {activeTargets.slice(0, 4).map((target) => (
+            <div key={target.id} className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border px-2 py-0.5 text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
+                  {target.kind === "x_profile" ? "X" : "Web"}
+                </span>
+                <div className="truncate text-sm font-medium">
+                  {target.title ?? target.url ?? target.locator}
+                </div>
+              </div>
+              <div className="mt-1 truncate text-xs text-muted-foreground">
+                {target.kind === "x_profile"
+                  ? `@${target.locator}`
+                  : (target.url ?? target.locator)}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+          No watch targets yet. Add a durable page or X profile to listen for market signals.
+        </p>
+      )}
+      <form
+        data-slot="company-detail-watch-target-create"
+        className="grid gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canSubmit) onSubmit();
+        }}
+      >
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            size="xs"
+            variant={draft.kind === "web_page" ? "secondary" : "ghost"}
+            onClick={() => onChange({ ...draft, kind: "web_page" })}
+            disabled={isSubmitting}
+          >
+            Website
+          </Button>
+          <Button
+            type="button"
+            size="xs"
+            variant={draft.kind === "x_profile" ? "secondary" : "ghost"}
+            onClick={() => onChange({ ...draft, kind: "x_profile" })}
+            disabled={isSubmitting}
+          >
+            X profile
+          </Button>
+        </div>
+        <Input
+          value={draft.title}
+          onChange={(event) => onChange({ ...draft, title: event.currentTarget.value })}
+          placeholder="Optional label, e.g. Changelog"
+          disabled={isSubmitting}
+        />
+        <Input
+          value={draft.locator}
+          onChange={(event) => onChange({ ...draft, locator: event.currentTarget.value })}
+          placeholder={placeholder}
+          disabled={isSubmitting}
+        />
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <Button type="submit" size="sm" variant="secondary" disabled={!canSubmit}>
+          {isSubmitting ? "Adding target..." : "Add watch target"}
+        </Button>
+      </form>
+    </section>
   );
 }
 
@@ -737,9 +907,12 @@ function PanelTabHeader({
   active,
   onChange,
 }: {
-  readonly tabs: ReadonlyArray<{ readonly id: "sources" | "memo"; readonly label: string }>;
-  readonly active: "sources" | "memo";
-  readonly onChange?: (panel: "sources" | "memo") => void;
+  readonly tabs: ReadonlyArray<{
+    readonly id: "sources" | "watch" | "memo";
+    readonly label: string;
+  }>;
+  readonly active: "sources" | "watch" | "memo";
+  readonly onChange?: (panel: "sources" | "watch" | "memo") => void;
 }) {
   return (
     <div data-slot="company-detail-tabs" className="flex gap-6 border-b px-5 text-sm font-medium">
@@ -762,7 +935,15 @@ function PanelTabHeader({
   );
 }
 
-function CheckGroupView({ group }: { readonly group: CompanyCheckGroup }) {
+function CheckGroupView({
+  group,
+  insightsById,
+  sourcesById,
+}: {
+  readonly group: CompanyCheckGroup;
+  readonly insightsById: ReadonlyMap<string, CompanySourceInsight>;
+  readonly sourcesById: ReadonlyMap<string, CompanySource>;
+}) {
   return (
     <div data-slot="company-detail-check-group" className="p-5">
       <div className="mb-4 flex items-center justify-between gap-4">
@@ -773,33 +954,116 @@ function CheckGroupView({ group }: { readonly group: CompanyCheckGroup }) {
       </div>
       <div className="space-y-3">
         {group.checks.map((check) => (
-          <CheckRow key={check.id} check={check} />
+          <CheckRow
+            key={check.id}
+            check={check}
+            insightsById={insightsById}
+            sourcesById={sourcesById}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function CheckRow({ check }: { readonly check: CompanyCheck }) {
+function CheckRow({
+  check,
+  insightsById,
+  sourcesById,
+}: {
+  readonly check: CompanyCheck;
+  readonly insightsById: ReadonlyMap<string, CompanySourceInsight>;
+  readonly sourcesById: ReadonlyMap<string, CompanySource>;
+}) {
+  const [expanded, setExpanded] = React.useState(false);
+  const evidence = check.supportingInsightIds.flatMap((insightId) => {
+    const insight = insightsById.get(insightId);
+    return insight ? [insight] : [];
+  });
+
   return (
     <div
       data-slot="company-detail-check"
-      className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 text-sm"
+      className={cn(
+        "rounded-lg border border-transparent text-sm",
+        expanded && "border-border bg-muted/20",
+      )}
     >
-      <div className="flex min-w-0 items-center gap-3 font-medium">
-        <span className={cn("size-2 rounded-full", statusDotClassName(check.status))} />
-        <span className="truncate">{check.label}</span>
-        <span
-          className={cn(
-            "rounded-full border px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.12em]",
-            sourceClassName(check.source),
-          )}
-        >
-          {check.source}
+      <button
+        type="button"
+        aria-expanded={expanded}
+        className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        onClick={() => setExpanded((current) => !current)}
+      >
+        <span className="flex min-w-0 items-center gap-3 font-medium">
+          <span className={cn("size-2 shrink-0 rounded-full", statusDotClassName(check.status))} />
+          <span className="truncate">{check.label}</span>
+          <span
+            className={cn(
+              "shrink-0 rounded-full border px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.12em]",
+              sourceClassName(check.source),
+            )}
+          >
+            {check.source}
+          </span>
         </span>
-      </div>
-      <div className="text-right text-muted-foreground">{check.detail ?? "--"}</div>
+        <span className="text-right text-muted-foreground">{check.detail ?? "--"}</span>
+        <span aria-hidden="true" className="w-4 text-center text-muted-foreground">
+          {expanded ? "-" : "+"}
+        </span>
+      </button>
+      {expanded ? (
+        <div data-slot="company-detail-check-evidence" className="space-y-4 border-t px-8 py-5">
+          <div>
+            <div className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Reason
+            </div>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">{check.rationale}</p>
+          </div>
+          <div>
+            <div className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Evidence
+            </div>
+            {evidence.length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {evidence.map((insight) => (
+                  <CheckEvidenceView
+                    key={insight.id}
+                    insight={insight}
+                    source={sourcesById.get(insight.sourceId)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                No supporting insights linked yet.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function CheckEvidenceView({
+  insight,
+  source,
+}: {
+  readonly insight: CompanySourceInsight;
+  readonly source: CompanySource | undefined;
+}) {
+  return (
+    <blockquote
+      data-slot="company-detail-check-evidence-item"
+      className="rounded-lg border bg-background p-3"
+    >
+      <div className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-primary">
+        {source?.kind ?? "source"} · {source?.title ?? "Unknown source"}
+        {insight.locator ? ` · ${insight.locator}` : ""}
+      </div>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">“{insight.text}”</p>
+    </blockquote>
   );
 }
 

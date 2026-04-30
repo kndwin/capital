@@ -37,6 +37,21 @@ export const companySource = pgTable("company_source", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const companyWatchTarget = pgTable("company_watch_target", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id").notNull(),
+  kind: text("kind").notNull().default("web_page"),
+  locator: text("locator").notNull(),
+  url: text("url"),
+  title: text("title"),
+  status: text("status").notNull().default("active"),
+  lastScannedAt: timestamp("last_scanned_at"),
+  lastMatchedAt: timestamp("last_matched_at"),
+  error: text("error"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const companySourceInsight = pgTable("company_source_insight", {
   id: text("id").primaryKey(),
   companyId: text("company_id").notNull(),
@@ -47,6 +62,16 @@ export const companySourceInsight = pgTable("company_source_insight", {
   extractorVersion: text("extractor_version").notNull().default("seed-v1"),
   insightWorkflowRunId: text("insight_workflow_run_id").notNull().default("seed"),
   order: integer("order").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const companyApplicationInvite = pgTable("company_application_invite", {
+  id: text("id").primaryKey(),
+  tokenHash: text("token_hash").notNull().unique(),
+  status: text("status").notNull().default("open"),
+  expiresAt: timestamp("expires_at").notNull(),
+  submittedCompanyId: text("submitted_company_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

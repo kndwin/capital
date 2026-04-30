@@ -11,3 +11,8 @@ export const memoSeedPreviewAtom = MemoClient.query("MemoSeedPreviewGet", undefi
 
 export const memoRenderPreviewAtom = (input: MemoRenderInput) =>
   MemoClient.query("MemoRenderPreview", input);
+
+export const memoListAtom = (companyId: string) =>
+  MemoClient.query("MemoListByCompany", { companyId }, { reactivityKeys: [`memo:${companyId}`] });
+
+export const generateMemoNarrative = MemoClient.mutation("MemoNarrativeGenerate");

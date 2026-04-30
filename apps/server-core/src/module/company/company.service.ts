@@ -1,12 +1,16 @@
 import { Clock, Context, Effect, Layer } from "effect";
+import { createHash, randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { CompanyCheckService } from "../company-check/company-check.service";
 import { CompanySourceIngestQueue } from "./company-source.queue";
-import { ErrorCompanyNotFound } from "./company.error";
+import { ErrorCompanyApplicationInviteInvalid, ErrorCompanyNotFound } from "./company.error";
 import { CompanyRepo } from "./company.repo";
 import type {
   Company,
+  CompanyApplicationInviteCreateInput,
+  CompanyApplicationSubmitInput,
+  CompanyWatchTargetCreateInput,
   CompanySourceCreateInput,
   CompanySourceRetryInput,
   CompanyDetail,
@@ -15,6 +19,7 @@ import type {
   CompanyHistoryItem,
   CompanySource,
   CompanySourceInsight,
+  CompanyWatchTarget,
   CompanyUpdateInput,
 } from "./company.schema";
 import { acquireNoteContent, hashSourceText, toCompanyId } from "./company.util";
@@ -28,11 +33,16 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
     const companyCheck = yield* CompanyCheckService;
     const sourceIngestQueue = yield* CompanySourceIngestQueue;
 
-    const create = Effect.fn("CompanyService.create")(function* (input: CompanyCreateInput) {
+    const createRecord = Effect.fn("CompanyService.createRecord")(function* (input: {
+      readonly name: string;
+      readonly description: string | null;
+      readonly website: string | null;
+    }) {
       const now = yield* Clock.currentTimeMillis;
+      const name = input.name.trim() || "Stealth company";
       const company: Company = {
-        id: `${toCompanyId({ name: input.name })}-${now}`,
-        name: input.name,
+        id: `${toCompanyId({ name })}-${now}`,
+        name,
         description: input.description,
         website: input.website,
         stage: "unknown",
@@ -44,11 +54,103 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
       };
       yield* Effect.annotateCurrentSpan({ "company.id": company.id });
       const created = yield* repo.upsert(company);
-      if (input.source) {
-        yield* createSource({ ...input.source, companyId: created.id });
-      }
       yield* Effect.logInfo("company.created");
       return created;
+    }, withModuleLogs);
+
+    const create = Effect.fn("CompanyService.create")(function* (input: CompanyCreateInput) {
+      const url = input.url.trim();
+      const created = yield* createRecord({
+        name: input.name,
+        description: null,
+        website: url,
+      });
+      yield* createInitialSourcingSources(created);
+      return created;
+    }, withModuleLogs);
+
+    const submitApplication = Effect.fn("CompanyService.submitApplication")(function* (
+      input: CompanyApplicationSubmitInput,
+    ) {
+      const token = input.token.trim();
+      if (!token) {
+        return yield* new ErrorCompanyApplicationInviteInvalid({
+          message: "Invite token is required",
+        });
+      }
+
+      const invite = yield* repo.getApplicationInviteByTokenHash(hashApplicationInviteToken(token));
+      const now = yield* Clock.currentTimeMillis;
+      if (!invite || invite.status !== "open" || invite.expiresAt <= now) {
+        return yield* new ErrorCompanyApplicationInviteInvalid({
+          message: "Invite link is invalid, expired, or already used",
+        });
+      }
+
+      const company = yield* createRecord({
+        name: input.name.trim(),
+        website: input.website?.trim() || null,
+        description: input.description?.trim() || null,
+      });
+
+      yield* createInitialSourcingSources(company).pipe(
+        Effect.catchTags({ ErrorCompanyNotFound: Effect.die }),
+      );
+
+      yield* createSource({
+        companyId: company.id,
+        kind: "note",
+        title: "Founder application",
+        text: buildApplicationNote(input),
+      }).pipe(Effect.catchTags({ ErrorCompanyNotFound: Effect.die }));
+
+      for (const link of input.links) {
+        const url = link.url.trim();
+        if (!url) continue;
+        yield* createSource({
+          companyId: company.id,
+          kind: "url",
+          url,
+          title: link.title?.trim() || null,
+        }).pipe(Effect.catchTags({ ErrorCompanyNotFound: Effect.die }));
+      }
+
+      for (const file of input.files) {
+        if (!file.fileName.trim() || !file.contentBase64.trim()) continue;
+        yield* createSource({
+          companyId: company.id,
+          kind: "pdf",
+          fileName: file.fileName.trim(),
+          contentBase64: file.contentBase64,
+          title: file.fileName.trim(),
+        }).pipe(Effect.catchTags({ ErrorCompanyNotFound: Effect.die }));
+      }
+
+      yield* repo.markApplicationInviteUsed({ id: invite.id, companyId: company.id });
+      yield* Effect.logInfo("company_application.submitted");
+      return { companyId: company.id };
+    }, withModuleLogs);
+
+    const createApplicationInvite = Effect.fn("CompanyService.createApplicationInvite")(function* (
+      input: CompanyApplicationInviteCreateInput,
+    ) {
+      const now = yield* Clock.currentTimeMillis;
+      const expiresInDays = Math.max(1, Math.min(90, Math.floor(input.expiresInDays)));
+      const expiresAt = now + expiresInDays * 86_400_000;
+      const token = randomBytes(24).toString("base64url");
+      const inviteId = `application-invite-${now}`;
+      yield* repo.createApplicationInvite({
+        id: inviteId,
+        tokenHash: hashApplicationInviteToken(token),
+        expiresAt,
+      });
+      yield* Effect.logInfo("company_application_invite.created");
+      return {
+        inviteId,
+        token,
+        url: `/apply?token=${encodeURIComponent(token)}`,
+        expiresAt,
+      };
     }, withModuleLogs);
 
     const upsert = Effect.fn("CompanyService.upsert")(function* (input: Company) {
@@ -177,6 +279,32 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
       return created;
     }, withModuleLogs);
 
+    const createInitialSourcingSources = Effect.fn("CompanyService.createInitialSourcingSources")(
+      function* (company: Company) {
+        if (company.website?.trim()) {
+          yield* createSource({
+            companyId: company.id,
+            kind: "url",
+            url: company.website.trim(),
+            title: "Company website",
+          });
+        }
+        yield* createSource({
+          companyId: company.id,
+          kind: "chat",
+          title: "Market research",
+          prompt: buildInitialMarketResearchPrompt(company),
+        });
+        yield* createSource({
+          companyId: company.id,
+          kind: "chat",
+          title: "Founder research",
+          prompt: buildInitialFounderResearchPrompt(company),
+        });
+      },
+      withModuleLogs,
+    );
+
     const retrySource = Effect.fn("CompanyService.retrySource")(function* (
       input: CompanySourceRetryInput,
     ) {
@@ -200,6 +328,34 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
       });
       yield* Effect.logInfo("company_source.retried");
       return { ...source, status: "pending" as const, error: null };
+    }, withModuleLogs);
+
+    const createWatchTarget = Effect.fn("CompanyService.createWatchTarget")(function* (
+      input: CompanyWatchTargetCreateInput,
+    ) {
+      yield* Effect.annotateCurrentSpan({ "company.id": input.companyId });
+      const company = yield* repo.get(input.companyId);
+      if (!company) return yield* new ErrorCompanyNotFound({ id: input.companyId });
+
+      const now = yield* Clock.currentTimeMillis;
+      const title = input.title?.trim() || null;
+      const locator = normalizeWatchTargetLocator(input.kind, input.locator);
+      const target: CompanyWatchTarget = {
+        id: `${input.companyId}:watch:${input.kind}:${toCompanyId({ name: locator })}:${now}`,
+        companyId: input.companyId,
+        kind: input.kind,
+        locator,
+        url: input.kind === "web_page" ? locator : toXProfileUrl(locator),
+        title,
+        status: "active",
+        lastScannedAt: null,
+        lastMatchedAt: null,
+        error: null,
+        updatedAt: now,
+      };
+      const created = yield* repo.createWatchTarget(target);
+      yield* Effect.logInfo("company_watch_target.created");
+      return created;
     }, withModuleLogs);
 
     const upsertSourceInsight = Effect.fn("CompanyService.upsertSourceInsight")(function* (
@@ -237,6 +393,12 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
       yield* Effect.annotateCurrentSpan({ "company.id": id });
       const company = yield* get(id);
       const sources = yield* repo.listSources(id);
+      const watchTargetRows = yield* repo.listWatchTargets(id);
+      const watchTargets = watchTargetRows.map((target) => ({
+        target,
+        recentScans: [],
+        recentSources: [],
+      }));
       const insights = yield* repo.listSourceInsights(id);
       const checkGroups = yield* companyCheck.getGroups(id);
       const history = getHistory({ companyId: id, sources, insights, checkGroups });
@@ -244,6 +406,7 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
         company,
         checkGroups,
         sources,
+        watchTargets,
         insights,
         history,
       } satisfies CompanyDetail;
@@ -251,7 +414,10 @@ export class CompanyService extends Context.Service<CompanyService>()("module/Co
 
     return {
       create,
+      submitApplication,
+      createApplicationInvite,
       createSource,
+      createWatchTarget,
       retrySource,
       upsert,
       update,
@@ -329,4 +495,63 @@ function getHistory({
       ];
     })
     .toSorted((left, right) => right.updatedAt - left.updatedAt);
+}
+
+function hashApplicationInviteToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function normalizeWatchTargetLocator(kind: CompanyWatchTarget["kind"], locator: string): string {
+  const trimmed = locator.trim();
+  if (kind === "x_profile") {
+    return trimmed
+      .replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, "")
+      .replace(/^@/, "")
+      .split(/[/?#]/)[0]!
+      .trim();
+  }
+  return trimmed;
+}
+
+function toXProfileUrl(handle: string): string | null {
+  return handle ? `https://x.com/${handle}` : null;
+}
+
+function buildApplicationNote(input: CompanyApplicationSubmitInput): string {
+  return [
+    `Company: ${input.name.trim()}`,
+    input.website?.trim() ? `Website: ${input.website.trim()}` : null,
+    input.description?.trim() ? `Description: ${input.description.trim()}` : null,
+    `Product: ${input.product.trim()}`,
+    `Customer: ${input.customer.trim()}`,
+    `Traction: ${input.traction.trim()}`,
+    input.fundraise?.trim() ? `Fundraise: ${input.fundraise.trim()}` : null,
+    input.notes?.trim() ? `Additional notes: ${input.notes.trim()}` : null,
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join("\n\n");
+}
+
+function buildInitialMarketResearchPrompt(company: Company): string {
+  return [
+    `Research ${company.name} for venture market diligence.`,
+    company.website ? `Start with website: ${company.website}` : null,
+    "Act as a market research subagent reporting sources to a research coordinator.",
+    "Find public evidence about market category, ICP, competitors, pricing, traction signals, customer adoption, and market risks.",
+    "Use only facts supported by public sources and include source URLs or names in locators.",
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join("\n\n");
+}
+
+function buildInitialFounderResearchPrompt(company: Company): string {
+  return [
+    `Research the founders and leadership behind ${company.name} for venture diligence.`,
+    company.website ? `Start with website: ${company.website}` : null,
+    "Act as a founder research subagent reporting sources to a research coordinator.",
+    "Find public evidence about founder names, prior roles, education, prior startups, exits, domain expertise, hiring/team signals, and reputational risks.",
+    "Use only facts supported by public sources and include source URLs or names in locators.",
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join("\n\n");
 }
